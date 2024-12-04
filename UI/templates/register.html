@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genesis Career - Registration</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: auto;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;   /* Make the title slightly smaller */
+            word-wrap: break-word; 
+        }
+
+        h2
+        {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        /* Container for the registration form (Horizontal Layout) */
+        .register-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            box-sizing: border-box;
+            padding-top: 40px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            gap: 20px;
+        }
+
+        .form-group {
+            flex: 1 1 45%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            flex: 1 1 100%;
+        }
+
+        label {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="email"], input[type="password"], input[type="file"], select {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Links */
+        .register-links {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .register-links a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 5px;
+        }
+
+        .register-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Popup Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .popup {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .popup p {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .popup button {
+            background-color: #ff5722;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .popup button:hover {
+            background-color: #e64a19;
+        }
+
+        /* Active classes for showing the popup */
+        .popup-overlay.active {
+            display: flex;
+        }
+
+        .popup.active {
+            display: block;
+        }
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            .register-container {
+                padding: 15px;
+                max-width: 90%;
+            }
+
+            .form-group {
+                flex: 1 1 100%;
+            }
+
+            button {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1>Genesis Career</h1>  
+        <h2 style="text-align: center; font-size: 18px; margin-top: 0;">Registration</h2><br>
+        <form action="/submit-register" method="post" enctype="multipart/form-data">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name">First Name:</label>
+                    <input type="text" id="first_name" name="first_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Last Name:</label>
+                    <input type="text" id="last_name" name="last_name" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="contact">Contact:</label>
+                    <input type="text" id="contact" name="contact" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="skillset">Skillset (comma-separated):</label>
+                    <input type="text" id="skillset" name="skillset" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="user_type">User Type:</label>
+                    <select id="user_type" name="user_type" required>
+                        <option value="" disabled selected>Select User Type</option>
+                        {% for user in usertype %}
+                            <option value="{{ user }}">{{ user }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>  
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="organization">Organization:</label>
+                    <select id="organization" name="organization" required>
+                        <option value="" disabled selected>Select an Organization</option>
+                        {% for org, category in organiz.items() %}
+                            <option value="{{ org }}">{{ org }} - ({{ category }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="profilepic">Profile Picture (JPEG, JPG, PNG):</label>
+                    <input type="file" id="profilepic" name="profilepic" accept="image/jpeg, image/jpg, image/png" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="resume">Resume (PDF):</label>
+                    <input type="file" id="resume" name="resume" accept="application/pdf" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <button type="submit">Register</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Links for Login -->
+        <div class="register-links">
+            <a href="/">Already a user? Login Here</a>
+        </div>
+    </div>
+
+    <!-- Popup -->
+    {% if popup_message %}
+    <div class="popup-overlay active">
+        <div class="popup active">
+            <p>{{ popup_message }}</p>
+            <form action="/" method="get">
+                <button type="submit">Close</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    
+</body>
+</html>
