@@ -10,45 +10,11 @@ CREATE SCHEMA GenesisCareer;
 USE GenesisCareer;
 
 
-
--- Create UserType table
-CREATE TABLE UserType (
-    Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
-    Type VARCHAR(50) NOT NULL UNIQUE -- Example: 'Admin', 'User', etc.
-);
-
--- Insert data into UserType table
-INSERT INTO UserType (Type) 
-VALUES 
-    ('Student'),
-    ('Employer'),
-    ('Employee'),
-    ('Intern'),
-    ('Fresher'),
-    ('Experienced');
-
--- Create Users table
-CREATE TABLE Users (
-    Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
-    FirstName VARCHAR(100) NOT NULL,
-    LastName VARCHAR(100) NOT NULL,
-    Email VARCHAR(255) NOT NULL UNIQUE,
-    Username VARCHAR(255) UNIQUE NOT NULL, 
-    Password VARCHAR(100) NOT NULL, 
-    Contact VARCHAR(15) UNIQUE NOT NULL,
-    ProfilePic LONGBLOB NOT NULL,
-    Resume LONGBLOB NOT NULL,
-    Skills VARCHAR(50) NOT NULL,
-    UserTypeId VARCHAR(50) NOT NULL, FOREIGN KEY (UserTypeId) REFERENCES UserType(Id)
-);
-
-USE genesiscareer;
-SELECT * FROM Users;
 -- Create OrganizationType table
 CREATE TABLE OrganizationType (
     Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
     Type VARCHAR(100) NOT NULL
-);
+); 
 
 -- Insert data into OrganizationType table
 INSERT INTO OrganizationType (Type) 
@@ -81,6 +47,41 @@ VALUES
 ('LearnAcademy', (SELECT Id FROM OrganizationType WHERE Type = 'MNC'), 'https://www.learnacademy.edu', 'Boston, MA'),
 ('City Council', (SELECT Id FROM OrganizationType WHERE Type = 'IT'), 'https://www.citycouncil.gov', 'Los Angeles, CA');
 
+
+
+-- Create UserType table
+CREATE TABLE UserType (
+    Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
+    Type VARCHAR(50) NOT NULL UNIQUE -- Example: 'Admin', 'User', etc.
+);
+
+-- Insert data into UserType table
+INSERT INTO UserType (Type) 
+VALUES 
+    ('Student'),
+    ('Employer'),
+    ('Employee'),
+    ('Intern'),
+    ('Fresher'),
+    ('Experienced');
+
+-- Create Users table
+CREATE TABLE Users (
+    Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email VARCHAR(255) NOT NULL UNIQUE,
+    Username VARCHAR(255) UNIQUE NOT NULL, 
+    Password VARCHAR(100) NOT NULL, 
+    Contact VARCHAR(15) UNIQUE NOT NULL,
+    ProfilePic LONGBLOB NOT NULL,
+    Resume LONGBLOB NOT NULL,
+    Skills VARCHAR(50) NOT NULL,
+    UserTypeId VARCHAR(50) NOT NULL, FOREIGN KEY (UserTypeId) REFERENCES UserType(Id),
+    OrganizationId VARCHAR(50) NOT NULL, FOREIGN KEY (OrganizationId) REFERENCES ORGANIZATION(Id)
+);
+
+
 -- Create JobPosting table
 CREATE TABLE JobPosting (
     Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
@@ -95,18 +96,18 @@ CREATE TABLE JobPosting (
     UserId VARCHAR(50) NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id)
 );
 
+SELECT * FROM JobPosting;
+
 -- Create Applications table
 CREATE TABLE Applications (
     Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
     JobPostingId INT NOT NULL,
     AppliedOn DATE DEFAULT CURRENT_DATE,
     JobId VARCHAR(50) NOT NULL, FOREIGN KEY (JobId) REFERENCES JobPosting(Id),
-    UserId VARCHAR(50) NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id)
+    UserId VARCHAR(50) NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id),
+    ProcessStep ENUM('Applied', 'Reviewed', 'Interview', 'Offered') NOT NULL
 );
 
--- Create Decision table
-CREATE TABLE Decision (
-    Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
-    ProcessStep ENUM('ApplicationSent', 'Reviewed', 'Interview', 'Offered') NOT NULL,
-    JobApplicationId VARCHAR(50) NOT NULL, FOREIGN KEY (JobApplicationId) REFERENCES Applications(Id)
-);
+SELECT * 
+FROM Users 
+WHERE UserTypeId IN (SELECT Id FROM UserType WHERE Type != 'Employer');

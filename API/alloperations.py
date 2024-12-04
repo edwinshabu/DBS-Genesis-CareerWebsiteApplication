@@ -12,6 +12,9 @@ from email.mime.multipart import MIMEMultipart
 
 class AllOperations:
 
+    def NewJobListener():
+        
+
     def SendEmail(to_email, message):
         smtp_server = 'smtp.gmail.com'  # Replace with your SMTP server
         smtp_port = 587
