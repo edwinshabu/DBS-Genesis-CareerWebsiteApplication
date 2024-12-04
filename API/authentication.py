@@ -69,6 +69,32 @@ class Operations:
         except Error as e:
             print(f"Error checking user existence: {e}")
             return False
+    
+    def RollbackUser(username):
+        try:
+            # Connect to the database
+            conn = Connection.get_db_connection('root', 'Root@123')
+            cursor = conn.cursor()
+
+            # Revoke all privileges and drop the user
+            cursor.execute(f"REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{username}'@'%';")
+            cursor.execute(f"DROP USER IF EXISTS '{username}'@'%';")
+            
+            # Apply changes
+            cursor.execute("FLUSH PRIVILEGES;")
+            conn.commit()
+
+            return {"message": f"User '{username}' has been rolled back successfully."}, 200
+
+        except Exception as e:
+            # Handle errors during rollback
+            return {"message": f"Failed to rollback user '{username}': {str(e)}"}, 500
+
+        finally:
+            # Ensure the connection is closed
+            if 'conn' in locals():
+                cursor.close()
+                conn.close()
 
     
     def Create_NewUser(username, password):
@@ -87,19 +113,27 @@ class Operations:
             conn.commit()
             
             
-            return {"message": f"User '{username}' created successfully with CRUD permissions."}, 201
+            return jsonify({"message": f"User '{username}' created successfully with CRUD permissions."}), 201
         
         except Error as e:
-            return {"error": str(e)}, 400
+            return jsonify({"error": str(e)}), 400
         
 
 
     def Register(data):
+        # Establish database connection
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith("Basic "):
+            base64_credentials = auth_header.split(" ")[1]
+            decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+            username, password = decoded_credentials.split(":", 1)
+        else:
+            return jsonify({"message": "Authentication header is missing."}), 400
         first_name = data.get('FirstName')
         last_name = data.get('LastName')
         email = data.get('EmailId')
-        username = data.get('Username')
-        password = data.get('Password')
+        username = username
+        password = password
         contact = data.get('ContactDetails')
         user_type = data.get('UserType')
         skill_set = data.get('SkillSet')
@@ -108,42 +142,58 @@ class Operations:
         # Extracting files (profile picture and resume)
         profile_picture = request.files.get('ProfilePicture')
         resume = request.files.get('Resume')
-
         result, status_code = Operations.Create_NewUser(username, password)
-    
+        
         if status_code == 409:  # User already exists
-            return {"status": "exists", "message": result["message"]}
-        if status_code != 201:  # Error occurred
-            return {"status": "error", "message": result.get("error", "Unknown error")}
+            return jsonify({"message": result["message"]}), status_code
+        elif status_code != 201:  # Error occurred
+            return jsonify({"message": result["message"]}), status_code
+        else:
+            jsonify({"message": "Unknow error occured, Please contact Administrator."}), 500
         
-        # Validation
-        if not Validation.validate_email(email):
-            return jsonify({"message": "Invalid email format"}), 400
-        if not Validation.validate_contact(contact):
-            return jsonify({"message": "Invalid contact number"}), 400
-        if not Validation.validate_password(password):
-            return jsonify({"message": "Invalid Password"}), 400
-
-
-        # Get the UserTypeId from UserType table
-        user_type_id = DBOperations.GetUserType(username, password, user_type)
-        if not user_type_id:
-            return jsonify({"message": "Invalid UserType"}), 400
-
-        # Convert profile picture and resume to binary (BLOB)
-        profile_picture_blob = None
-        if profile_picture:
-            profile_picture_blob = profile_picture.read()
-
-        resume_blob = None
-        if resume:
-            resume_blob = resume.read()
-        
-        # Establish database connection
         conn = Connection.get_db_connection(username, password)
+        if conn == 500:
+            return jsonify({"message":"Error occured during Database Connection. Contact Administrator."}),500
         cursor = conn.cursor()
-
         try:
+            
+
+            
+            # Validation
+            if not Validation.validate_email(email):
+                Operations.RollbackUser(username)
+                return jsonify({"message": "Invalid email format"}), 400
+            if not Validation.validate_contact(contact):
+                Operations.RollbackUser(username)
+                return jsonify({"message": "Invalid contact number"}), 400
+            if not Validation.validate_password(password):
+                Operations.RollbackUser(username)
+                return jsonify({"message": "Invalid Password"}), 400
+
+
+            # Get the UserTypeId from UserType table
+            user_type_id = DBOperations.GetUserType(username, password, user_type)
+            if user_type_id == 500:
+                return jsonify({"message": "Unknown error occured during Database Connection, please contact Administrator."}), 500
+            if not user_type_id:
+                Operations.RollbackUser(username)
+                return jsonify({"message": "Invalid UserType"}), 400
+
+            # Convert profile picture and resume to binary (BLOB)
+            profile_picture_blob = None
+            if profile_picture:
+                profile_picture_blob = profile_picture.read()
+            elif not profile_picture:
+                Operations.RollbackUser(username)
+                return jsonify({"message":"Profile Picture is needed."}),404
+        
+
+            resume_blob = None
+            if resume:
+                resume_blob = resume.read()
+            elif not resume:
+                Operations.RollbackUser(username)
+                return jsonify({"message":"Resume is needed."}),404
 
             cursor.execute(f"SELECT Id FROM Organization WHERE Name = '{org}';")
             org_id_data = cursor.fetchone()
@@ -157,8 +207,9 @@ class Operations:
             conn.commit()
             return jsonify({"message": "Registration successful"}), 201
         except mysql.connector.Error as err:
-            conn.rollback()
-            return jsonify({"message": f"Database error: {err}"}), 500
+                conn.rollback()
+                Operations.RollbackUser(username)
+                return jsonify({"Registration Error": f"{err.msg}"}), 500
         finally:
             cursor.close()
             conn.close()

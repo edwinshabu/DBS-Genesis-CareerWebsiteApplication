@@ -1,3 +1,4 @@
+from flask import jsonify
 import mysql.connector
 from mysql.connector import Error
 
@@ -48,14 +49,16 @@ class Connection:
             if connection.is_connected():
                 return connection
         except Error as e:
-            print(f"Error: {e}")
             return 500
         
 
 class DBOperations:    
     def GetUserType(username, password, user_type):
+        try:
             # Connect to the database and fetch the UserTypeId based on user_type
             conn = Connection.get_db_connection(username, password)
+            if conn == 500:
+                return 500
             cursor = conn.cursor()
             cursor.execute("SELECT Id FROM UserType WHERE Type = %s", (user_type,))
             user_type_id = cursor.fetchone()
@@ -63,5 +66,8 @@ class DBOperations:
             if user_type_id:
                 return user_type_id[0]
             else:
-                return None
+                return 500
+        except Exception as ex:
+            print(ex)
+            return 500
 
