@@ -55,7 +55,7 @@ def ForgotPassword():
     if result[1] == 200:
         return jsonify({"message": "Password sent to your registered Email."}), 200
     elif result[1] == 404:
-        return result[0], 404
+        return jsonify({"message":"Either the Username or the Email Address is not registered."}), 404
     else:
         return jsonify({"error": "Unknow Error, Please contact Admin."}), 500
     

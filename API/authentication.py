@@ -171,7 +171,7 @@ class Operations:
             cursor.execute(query, (username, emailId))
             result = cursor.fetchone()
             if result == None:
-                return jsonify({"message" : "User is not registered."}), 404
+                return jsonify({"message" : "Username or Email is not registered."}), 404
             if result:
                 password = result[0]
                 message = f"""

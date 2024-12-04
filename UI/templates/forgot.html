@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genesis Career - Forgot Password</title>
-    <link rel="stylesheet" href="/static/styles.css">
     <style>
         /* General Styles */
         body {
@@ -25,8 +24,8 @@
             margin-bottom: 20px;
         }
 
-        /* Container for the forgot password form */
-        .forgot-password-container {
+        /* Container for the login form */
+        .login-container {
             background-color: white;
             padding: 30px;
             border-radius: 8px;
@@ -46,7 +45,7 @@
             margin-bottom: 5px;
         }
 
-        input[type="text"], input[type="email"] {
+        input[type="text"], input[type="password"] {
             width: 100%;
             padding: 10px;
             font-size: 16px;
@@ -72,19 +71,19 @@
         }
 
         /* Links */
-        .forgot-password-links {
+        .login-links {
             text-align: center;
             margin-top: 15px;
         }
 
-        .forgot-password-links a {
+        .login-links a {
             color: #007bff;
             text-decoration: none;
             font-size: 14px;
             margin: 5px;
         }
 
-        .forgot-password-links a:hover {
+        .login-links a:hover {
             text-decoration: underline;
         }
 
@@ -142,7 +141,7 @@
 
         /* Media Queries for Responsiveness */
         @media (max-width: 768px) {
-            .forgot-password-container {
+            .login-container {
                 padding: 20px;
             }
 
@@ -157,75 +156,39 @@
     </style>
 </head>
 <body>
-    <div class="forgot-password-container">
-        <h1>Genesis Career</h1>
-        <h2>Reset Your Password</h2>
-        <form id="forgot-password-form">
+    <div class="login-container">
+        <h1>Genesis Career</h1>  
+        <h2 style="text-align: center;">Forgot Password</h2>
+        <form action="/submit-forgot" method="post">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                <input type="text" id="email" name="email" required>
             </div>
             <div class="form-group">
                 <button type="submit">Submit</button>
             </div>
         </form>
 
-        <div class="forgot-password-links">
-            <a href="/login">Back to Login</a>
+        <!-- Links for Forgot Password and New User -->
+        <div class="login-links">
+            <a href="login">Login Page</a>
         </div>
     </div>
 
     <!-- Popup -->
-    <div id="popup-overlay" class="popup-overlay">
-        <div class="popup">
-            <p id="popup-message"></p>
-            <button onclick="closePopup()">Close</button>
+    {% if popup_message %}
+    <div class="popup-overlay active">
+        <div class="popup active">
+            <p>{{ popup_message }}</p>
+            <form action="/" method="get">
+                <button type="submit">Close</button>
+            </form>
         </div>
     </div>
-
-    <script>
-        // Handling the form submission
-        document.getElementById('forgot-password-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-
-            // Prepare the request body
-            const requestBody = {
-                username: username,
-                email: email
-            };
-
-            // Send the POST request to the API
-            fetch('http://127.0.0.1:8081/ForgotPassword', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Display success message
-                document.getElementById('popup-message').innerText = "Password reset link sent to your email!";
-                document.getElementById('popup-overlay').classList.add('active');
-            })
-            .catch(error => {
-                // Display error message
-                document.getElementById('popup-message').innerText = "Something went wrong. Please try again.";
-                document.getElementById('popup-overlay').classList.add('active');
-            });
-        });
-
-        // Function to close the popup
-        function closePopup() {
-            document.getElementById('popup-overlay').classList.remove('active');
-        }
-    </script>
+    {% endif %}
 </body>
 </html>
