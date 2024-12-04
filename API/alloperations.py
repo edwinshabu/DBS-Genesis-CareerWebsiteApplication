@@ -4,7 +4,7 @@ from mysql.connector import Error
 from database_connector import Connection
 
 
-from flask import Flask, request, jsonify
+from flask import Flask, json, request, jsonify
 import mysql.connector
 import smtplib
 from email.mime.text import MIMEText
@@ -33,6 +33,50 @@ class AllOperations:
         except Exception as e:
             print(f"Failed to send email: {e}")
             return False
+
+    def ShowOrganizations():
+        try:
+            connection = Connection.get_db_connection('root', 'Root@123')
+            if connection.is_connected():
+                cursor = connection.cursor(dictionary=True)
+                query = """
+                SELECT o.Name, ot.Type
+                FROM Organization o
+                JOIN OrganizationType ot ON o.OrganizationTypeId = ot.Id;
+                """
+                cursor.execute(query)
+                result = cursor.fetchall()
+                org_dict = {}
+                for row in result:
+                    org_dict[row['Name']] = row['Type']
+                org_json = json.dumps(org_dict, indent=4)
+                cursor.close()
+                connection.close()
+
+                return org_json,200
+            
+        except Exception as ex:
+            return jsonify({"message": f"{ex}"}), 500 
+
+    def ShowUserTypes():
+        try:
+            connection = Connection.get_db_connection('root', 'Root@123')
+            if connection.is_connected():
+                cursor = connection.cursor(dictionary=True)
+                query = "SELECT Type from UserType;"
+                cursor.execute(query)
+                result = cursor.fetchall()
+                
+                # Extract only the 'Type' values into a list
+                types = [row['Type'] for row in result]
+                
+                cursor.close()
+                connection.close()
+
+                return types, 200
+                
+        except Exception as ex:
+            return jsonify({"message": f"Unable to establish connection to Database. Please contact Administrator."}), 500
 
         
 
@@ -147,7 +191,8 @@ class Employer:
             return jsonify({"message": "Job posting created successfully"}), 201
         except Exception as ex:
             return jsonify({"error": str(ex)}), 500
-        
+
+    
     def ShowApplications():
         try:
             auth_header = request.headers.get('Authorization')

@@ -86,6 +86,18 @@ def ShowJobs():
         return result
     else:
         return jsonify({"error": "Unexpected result format"}), 500
+    
+@app.route('/ListOrganization',methods=['GET'])
+def ListOrg():
+    result = AllOperations.ShowOrganizations()
+    return result
+
+@app.route('/ShowUserType',methods=['GET'])
+def ListOrganization():
+    result = AllOperations.ShowUserTypes()
+    return result
+
+
 
 
 
