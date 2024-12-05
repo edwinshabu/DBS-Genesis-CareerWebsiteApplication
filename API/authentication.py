@@ -23,7 +23,6 @@ class Validation:
 class Operations:
 
     def Login():
-
         auth_header = request.headers.get('Authorization')
         if auth_header and auth_header.startswith("Basic "):
             base64_credentials = auth_header.split(" ")[1]
@@ -197,12 +196,10 @@ class Operations:
         
         conn = Connection.get_db_connection(username, password)
         if conn == 500:
+            Operations.RollbackUser(username)
             return jsonify({"message":"Error occured during Database Connection. Contact Administrator."}),500
         cursor = conn.cursor()
-        try:
-            
-
-            
+        try:    
             # Validation
             if not Validation.validate_email(email):
                 Operations.RollbackUser(username)
@@ -218,6 +215,7 @@ class Operations:
             # Get the UserTypeId from UserType table
             user_type_id = DBOperations.GetUserType(username, password, user_type)
             if user_type_id == 500:
+                Operations.RollbackUser(username)
                 return jsonify({"message": "Unknown error occured during Database Connection, please contact Administrator."}), 500
             if not user_type_id:
                 Operations.RollbackUser(username)

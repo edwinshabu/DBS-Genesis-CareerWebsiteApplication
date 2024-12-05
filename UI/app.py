@@ -92,9 +92,13 @@ def submit():
         if not username or not password:
             return render_template('index.html', popup_message="Username and password are required.")
 
+        auth_string = f"{username}:{password}"
+        auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+        headers = {
+            'Authorization': f'Basic {auth_base64}'
+        }
         # Forward the data to the external API
-        payload = {"username": username, "password": password}
-        response = requests.post(f'{API_URL}/login', json=payload)
+        response = requests.post(f'{API_URL}/Login', headers=headers)
         
         if response.status_code == 200:
             api_response = response.json()
