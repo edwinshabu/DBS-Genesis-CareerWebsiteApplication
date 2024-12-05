@@ -1,10 +1,13 @@
-from flask import Flask, request, jsonify
+from datetime import timedelta
+from flask import Flask, app, request, jsonify, session
 import re
 from mysql.connector import Error
 from database_connector import Connection, DBOperations
 from alloperations import AllOperations
 import base64
 import mysql.connector
+
+
 
 class Validation:
     def validate_email(email):
@@ -22,14 +25,8 @@ class Validation:
 
 class Operations:
 
-    def Login():
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith("Basic "):
-            base64_credentials = auth_header.split(" ")[1]
-            decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-            username, password = decoded_credentials.split(":", 1)
-        else:
-            return jsonify({"message": "Authentication header is missing."}), 400
+    def Login(username, password):
+        
 
         if not username or not password:
             return jsonify({'message': 'Username and password are required'}), 400
@@ -38,7 +35,6 @@ class Operations:
         if connection == 500:
             return jsonify({'message': 'Either User is not registered or Credentials are incorrect.'}), 500
         # return jsonify({'message': 'Login Success'}), 200
-        
         cursor = connection.cursor(dictionary=True)
         
         try:
@@ -161,6 +157,13 @@ class Operations:
         except Error as e:
             return jsonify({"error": str(e)}), 400
         
+    def Session(username):
+        try: 
+            # Store user info in the session
+            session['username'] = username  # Store recipient ID
+            return session
+        except Exception as e:
+            return None
 
 
     def Register(data):

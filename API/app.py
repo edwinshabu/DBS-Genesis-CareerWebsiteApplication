@@ -1,10 +1,20 @@
-import threading
+import base64
+from datetime import datetime, timedelta
+from flask import session
 from flask import Flask, request, jsonify
+from requests import Session
 from authentication import Operations
 from alloperations import AllOperations, Employer
 
 
 app = Flask(__name__)
+
+app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
+app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions on the filesystem
+session = Session()
+user_sessions = {}
+SESSION_TIMEOUT = 30
+
 
 # Login and Registeration #####################################
 
@@ -22,8 +32,25 @@ def register():
 
 @app.route('/Login', methods=['POST'])
 def login():
-    output = Operations.Login()
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_credentials = auth_header.split(" ")[1]
+        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+        username, password = decoded_credentials.split(":", 1)
+    else:
+        return jsonify({"message": "Authentication header is missing."}), 400
+    
+    output = Operations.Login(username, password)
+    session_id = f"session_{username}"
+    user_sessions[session_id] = {
+        "username": username,
+        "start_time": datetime.now(),
+        "expiry_time": datetime.now() + timedelta(minutes=SESSION_TIMEOUT)
+    }
     return output
+
+
+    
 
 @app.route('/ListAllUsers', methods=['GET'])
 def listallusers():
