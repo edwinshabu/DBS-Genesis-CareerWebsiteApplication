@@ -44,16 +44,12 @@ class AllOperations:
         WHERE UserTypeId != (SELECT Id FROM UserType WHERE Type = 'Employer')
     """)
             emails = cursor.fetchall()
-
-            if len(emails) == 0:
-                return "Email Service Error",404
-            connection.close()
-    
+            email_list = [row[0] for row in emails]
             # Return list of emails
-            return [email[0] for email in emails],200
+            return email_list
         except:
-            return "Email Service Error.",500
-
+            return "Email Service Error."
+        
     def ShowOrganizations():
         try:
             connection = Connection.get_db_connection('root', 'Root@123')
@@ -230,17 +226,11 @@ class Employer:
                     return jsonify({"message": "User is not properly registered."}), 404
            
             non_employer_emails = AllOperations.GetAllEmail()
-            if non_employer_emails[1] == 500:
-                connection.rollback()
-                return  jsonify({"message": "Email Service Error."}), 500
-            elif non_employer_emails[1] == 404:
-                connection.rollback()
-                print("Skipping.............. Email as there is no users.")
-            elif non_employer_emails[1] == 200:
+            if non_employer_emails.count != 0 or non_employer_emails == "Email Service Error":
                 for email in non_employer_emails:
-                    if non_employer_emails == 200:
-                        break
-                    AllOperations.SendEmail(email[0], message)
+                    AllOperations.SendEmail(email, message)
+            else:
+                print("Skipping....................")
             connection.close()
 
             return jsonify({"message": "Job posting created successfully"}), 201
@@ -289,6 +279,8 @@ class Employer:
 
                 # Establish DB connection
                 connection = Connection.get_db_connection(username, password)
+                if connection == 500:
+                    return jsonify({"message": "Database Connection Service Error. Please contact Administrator."}), 500
 
                 if connection.is_connected():
                     cursor = connection.cursor()
@@ -296,7 +288,7 @@ class Employer:
                     rows = cursor.fetchall()
                     if not rows:  # If the list is empty, return an empty JSON array
                         return jsonify({"message": "No Jobs Available right now."}), 200
-                    return jsonify(rows)
+                    return rows, 200
 
                 connection.close()
 

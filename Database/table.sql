@@ -90,7 +90,7 @@ CREATE TABLE JobPosting (
     LastDate DATE NOT NULL,
     UrlToApply VARCHAR(255) NOT NULL,
     Title VARCHAR(255) NOT NULL,
-    WhoCanApply VARCHAR(100) NOT NULL UNIQUE,
+    WhoCanApply VARCHAR(100) NOT NULL,
     Description TEXT,
     RequiredSkillSet TEXT,
     UserId VARCHAR(50) NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id)
