@@ -14,10 +14,15 @@ def register():
     output = Operations.Register(data)
     return output
     
-@app.route('/login', methods=['POST'])
+# @app.route('/Login', methods=['POST'])
+# def login():
+#     data = request.get_json()
+#     output = Operations.Login(data)
+#     return output
+
+@app.route('/Login', methods=['POST'])
 def login():
-    data = request.get_json()
-    output = Operations.Login(data)
+    output = Operations.Login()
     return output
 
 @app.route('/ListAllUsers', methods=['GET'])

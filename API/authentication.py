@@ -22,9 +22,16 @@ class Validation:
 
 class Operations:
 
-    def Login(data):
-        username = data.get('username')
-        password = data.get('password')
+    def Login():
+
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith("Basic "):
+            base64_credentials = auth_header.split(" ")[1]
+            decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+            username, password = decoded_credentials.split(":", 1)
+        else:
+            return jsonify({"message": "Authentication header is missing."}), 400
+
         if not username or not password:
             return jsonify({'message': 'Username and password are required'}), 400
 
@@ -58,6 +65,43 @@ class Operations:
             cursor.close()
             connection.close() 
             return jsonify({'message': f"Error: {e}"}), 500
+
+    # def Login(data):
+    #     username = data.get('username')
+    #     password = data.get('password')
+    #     if not username or not password:
+    #         return jsonify({'message': 'Username and password are required'}), 400
+
+    #     connection = Connection.get_db_connection(username,password)
+    #     if connection == 500:
+    #         return jsonify({'message': 'Either User is not registered or Credentials are incorrect.'}), 500
+    #     # return jsonify({'message': 'Login Success'}), 200
+        
+    #     cursor = connection.cursor(dictionary=True)
+        
+    #     try:
+    #         # Query to check if the username and password exist in the user table
+    #         query = "SELECT * FROM Users WHERE Username = %s"
+    #         cursor.execute(query, (username,))
+            
+    #         result = cursor.fetchone()
+    #         if result:
+    #             # Convert binary data to Base64 string for ProfilePic and Resume if they exist
+    #             if result.get('ProfilePic'):
+    #                 result['ProfilePic'] = base64.b64encode(result['ProfilePic']).decode('utf-8')
+    #             if result.get('Resume'):
+    #                 result['Resume'] = base64.b64encode(result['Resume']).decode('utf-8')
+    #             cursor.close()
+    #             connection.close() 
+    #             return jsonify({'message': 'Login successful', 'user': result}), 200
+    #         else:
+    #             cursor.close()
+    #             connection.close() 
+    #             return jsonify({'message': 'User is not registered.'}), 404
+    #     except Error as e:
+    #         cursor.close()
+    #         connection.close() 
+    #         return jsonify({'message': f"Error: {e}"}), 500
 
     def Check_User(username):
         try:
