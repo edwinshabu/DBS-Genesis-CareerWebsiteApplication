@@ -1,3 +1,4 @@
+import threading
 from flask import Flask, request, jsonify
 from authentication import Operations
 from alloperations import AllOperations, Employer
@@ -103,4 +104,8 @@ def ListOrganization():
 
     
 if __name__ == '__main__':
+    listener_thread = threading.Thread(target=AllOperations.NewJobListener, daemon=True)
+    listener_thread.start()
+    
+    print("NewJobListener started. Running Flask app...")
     app.run(debug=True, port=8081)
