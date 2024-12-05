@@ -43,10 +43,19 @@ def register():
     try:
         response_org = requests.get(f'{API_URL}/ListOrganization')
         response_org.raise_for_status()
-        org = response_org.json()
+        org_data = response_org.json()  # Get the JSON response
+        org_keys = list(org_data.keys())  # Extract only the keys
+
     except requests.exceptions.RequestException as e:
         print(f"Organization API error: {e}")
-        return render_template('register.html', popup_message="Failed to fetch organizations.", organiz={}, usertype=[])
+        return render_template('register.html', popup_message="Failed to fetch organizations.", organizations=[])
+    # try:
+    #     response_org = requests.get(f'{API_URL}/ListOrganization')
+    #     response_org.raise_for_status()
+    #     org = response_org.json()
+    # except requests.exceptions.RequestException as e:
+    #     print(f"Organization API error: {e}")
+    #     return render_template('register.html', popup_message="Failed to fetch organizations.", organiz={}, usertype=[])
 
     try:
         user_types_response = requests.get(f'{API_URL}/ShowUserType')
@@ -54,9 +63,9 @@ def register():
         user_types = user_types_response.json()
     except requests.exceptions.RequestException as e:
         print(f"User type API error: {e}")
-        return render_template('register.html', popup_message="Failed to fetch user types.", organiz=org, usertype=[])
+        return render_template('register.html', popup_message="Failed to fetch user types.", organizations=org_keys, usertype=[])
 
-    return render_template('register.html', popup_message=None, organiz=org, usertype=user_types)
+    return render_template('register.html', popup_message=None, organizations=org_keys, usertype=user_types)
 
 
 
@@ -140,9 +149,67 @@ def submitforgot():
         return render_template('forgot.html', popup_message=f"Error: {str(e)}")
 
 
+# @app.route('/submit-register', methods=['POST'])
+# def submitregister():
+#     try:
+#         username = request.form.get('username')
+#         password = request.form.get('password')
+#         first_name = request.form.get('first_name')
+#         last_name = request.form.get('last_name')
+#         email = request.form.get('email')
+#         contact = request.form.get('contact')
+#         skillset = request.form.get('skillset')
+#         user_type = request.form.get('user_type')
+#         organization = request.form.get('organization')
+#         profilepic = request.files.get('profilepic')
+#         resume = request.files.get('resume')
+
+#         # response = requests.post(f'{API_URL}/Register', )
+
+#         auth_string = f"{username}:{password}"
+#         auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+
+#         # Prepare headers with the Base64 encoded Authorization
+#         headers = {
+#             'Content-Type': 'multipart/form-data',
+#             'Authorization': f'Basic {auth_base64}'
+#         }
+
+#         # Prepare data to be sent in the POST request as JSON
+#         data = {
+#             'FirstName': first_name,
+#             'LastName': last_name,
+#             'EmailId': email,
+#             'ContactDetails': contact,
+#             'SkillSet': skillset,
+#             'UserType': user_type,# This might need to be handled differently if it's a file
+#             'Organization': organization
+#         }
+
+#         files = {
+#             'ProfilePicture': (profilepic.filename, profilepic.stream, profilepic.content_type),
+#             'Resume': (resume.filename, resume.stream, resume.content_type)
+#         }
+
+#         # Sending the POST request to the API
+#         response = requests.post(f'{API_URL}/Register', headers=headers, data=data, files=files)
+
+        
+        
+#         if response.status_code == 200:
+#             api_response = response.json()
+#             if api_response.get("message") == 'Registration successful':
+#                 return render_template('register.html', popup_message=f'{response.reason}')
+#         else:
+#             print(response.status_code)
+#             return render_template('register.html', popup_message='Error Occured')
+#     except Exception as e:
+#         return render_template('register.html', popup_message=f"Error")
+
 @app.route('/submit-register', methods=['POST'])
 def submitregister():
     try:
+        # Get data from the form
         username = request.form.get('username')
         password = request.form.get('password')
         first_name = request.form.get('first_name')
@@ -155,29 +222,27 @@ def submitregister():
         profilepic = request.files.get('profilepic')
         resume = request.files.get('resume')
 
-        response = requests.post(f'{API_URL}/Register', )
-
-
+        # Encode the credentials for Basic Auth
         auth_string = f"{username}:{password}"
         auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
 
         # Prepare headers with the Base64 encoded Authorization
         headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Basic {auth_base64}'
+            'Authorization': f'Basic {auth_base64}',
         }
 
-        # Prepare data to be sent in the POST request as JSON
+        # Prepare the data to send in the POST request (use form data)
         data = {
             'FirstName': first_name,
             'LastName': last_name,
             'EmailId': email,
             'ContactDetails': contact,
             'SkillSet': skillset,
-            'UserType': user_type,# This might need to be handled differently if it's a file
+            'UserType': user_type,
             'Organization': organization
         }
 
+        # Prepare the files to be sent in the POST request
         files = {
             'ProfilePicture': (profilepic.filename, profilepic.stream, profilepic.content_type),
             'Resume': (resume.filename, resume.stream, resume.content_type)
@@ -186,16 +251,22 @@ def submitregister():
         # Sending the POST request to the API
         response = requests.post(f'{API_URL}/Register', headers=headers, data=data, files=files)
 
-        
-        
-        if response.status_code == 200:
+        # Check the response status
+        if response.status_code == 201:  # Successful registration
             api_response = response.json()
             if api_response.get("message") == 'Registration successful':
-                return render_template('register.html', popup_message=f'{response.reason}')
+                return render_template('register.html', popup_message='Registration successful')
         else:
-            return render_template('register.html', popup_message='Error Occured')
+            # Handle other error responses
+            api_response = response.json() if response.content else {}
+            error_message = api_response.get("message", "An error occurred during registration.")
+            return render_template('register.html', popup_message=f'Error: {error_message}')
+    
     except Exception as e:
-        return render_template('register.html', popup_message=f"Error")
+        # Handle any exceptions that occur
+        print(f"Exception: {e}")
+        return render_template('register.html', popup_message="An unexpected error occurred.")
+
 
 if __name__ == '__main__':
     app.run(port=8080, debug=True)

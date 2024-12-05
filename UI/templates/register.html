@@ -224,19 +224,18 @@
                     </select>
                 </div>
             </div>  
-
             <div class="form-row">
                 <div class="form-group">
                     <label for="organization">Organization:</label>
                     <select id="organization" name="organization" required>
                         <option value="" disabled selected>Select an Organization</option>
-                        {% for org, category in organiz.items() %}
-                            <option value="{{ org }}">{{ org }} - ({{ category }})</option>
+                        {% for org in organizations %}
+                            <option value="{{ org }}">{{ org }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
-            
+           
             
             <div class="form-row">
                 <div class="form-group full-width">
