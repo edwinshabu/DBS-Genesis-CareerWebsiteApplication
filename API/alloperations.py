@@ -35,6 +35,25 @@ class AllOperations:
             print(f"Failed to send email: {e}")
             return False
 
+    def GetAllEmail():
+        try:
+            connection = Connection.get_db_connection('root', 'Root@123')
+            cursor = connection.cursor()
+            cursor.execute("""
+        SELECT Email FROM Users 
+        WHERE UserTypeId != (SELECT Id FROM UserType WHERE Type = 'Employer')
+    """)
+            emails = cursor.fetchall()
+
+            if len(emails) == 0:
+                return "Email Service Error",404
+            connection.close()
+    
+            # Return list of emails
+            return [email[0] for email in emails],200
+        except:
+            return "Email Service Error.",500
+
     def ShowOrganizations():
         try:
             connection = Connection.get_db_connection('root', 'Root@123')
@@ -174,6 +193,26 @@ class Employer:
             description = data.get("Description")
             required_skill_set = data.get("RequiredSkillSet")
 
+            message = f"""
+    Dear User,
+
+    We are excited to announce a new job posting:
+
+    Title: {title}
+    Posted On: {last_date}
+    URL: {url}
+    
+    Description:
+    {description}
+    
+    Who can apply: {whocan}
+    
+    Required Skill Set:
+    {required_skill_set}
+    
+    Thank you,
+    Genesis Career Team
+    """
             connection = Connection.get_db_connection(username, password)
             if connection.is_connected():
                 cursor = connection.cursor()
@@ -187,10 +226,26 @@ class Employer:
         """, (last_date, url, title, whocan, description, required_skill_set, user_id))
                     connection.commit()
                 else:
+                    connection.rollback()
                     return jsonify({"message": "User is not properly registered."}), 404
+           
+            non_employer_emails = AllOperations.GetAllEmail()
+            if non_employer_emails[1] == 500:
+                connection.rollback()
+                return  jsonify({"message": "Email Service Error."}), 500
+            elif non_employer_emails[1] == 404:
+                connection.rollback()
+                print("Skipping.............. Email as there is no users.")
+            elif non_employer_emails[1] == 200:
+                for email in non_employer_emails:
+                    if non_employer_emails == 200:
+                        break
+                    AllOperations.SendEmail(email[0], message)
             connection.close()
+
             return jsonify({"message": "Job posting created successfully"}), 201
         except Exception as ex:
+            connection.rollback()
             return jsonify({"error": str(ex)}), 500
 
     
