@@ -16,6 +16,10 @@ def index():
 def empdash():
     return render_template('employer-dash.html', popup_message=None)
 
+@app.route('/user-dash')
+def userdash():
+    return render_template('user-dash.html', popup_message=None)
+
 @app.route('/logout')
 def Signout():
     username = 'pete'
@@ -266,7 +270,8 @@ def submit():
                     user_data = api_response  # Store user data (if needed) in session or a context variable
                     return render_template('employer-dash.html', user=user_data)
                 else:
-                    return render_template('index.html', popup_message="You are not authorized to access the employer dashboard.")
+                    user_data = api_response 
+                    return render_template('user-dash.html', user=user_data)
             else:
                 return render_template('index.html', popup_message=api_response.get("message", "Login failed."))
         elif response.status_code == 404:
