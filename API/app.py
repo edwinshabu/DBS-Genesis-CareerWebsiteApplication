@@ -15,7 +15,6 @@ session = Session()
 user_sessions = {}
 SESSION_TIMEOUT = 30
 
-
 # Login and Registeration #####################################
 
 @app.route('/Register', methods=['POST'])
@@ -40,38 +39,73 @@ def login():
     else:
         return jsonify({"message": "Authentication header is missing."}), 400
     
-    output = Operations.Login(username, password)
-    session_id = f"session_{username}"
-    user_sessions[session_id] = {
-        "username": username,
-        "start_time": datetime.now(),
-        "expiry_time": datetime.now() + timedelta(minutes=SESSION_TIMEOUT)
-    }
-    return output
-
+    auth = Operations.Authentication(username, password)
+    if auth:
+        output = Operations.Login(username, password)
+        session_id = f"session_{username}"
+        user_sessions[session_id] = {
+            "username": username,
+            "start_time": datetime.now(),
+            "expiry_time": datetime.now() + timedelta(minutes=SESSION_TIMEOUT)
+        }
+        return output
+    else:
+        return jsonify({"error": "User is not registered."}), 404
 
     
 
 @app.route('/ListAllUsers', methods=['GET'])
 def listallusers():
-    output = AllOperations.ListAllUsers()
-    return jsonify(output)
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_credentials = auth_header.split(" ")[1]
+        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+        username, password = decoded_credentials.split(":", 1)
+    else:
+        return jsonify({"message": "Authentication header is missing."}), 400
+    session_status = AllOperations.CheckSession(username, user_sessions)
+    if session_status:
+        auth = Operations.Authentication(username, password)
+        if auth:
+            output = AllOperations.ListAllUsers()
+            return jsonify(output)
+        else:
+            return jsonify({"error": "User is not registered."}), 404
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+
 
 @app.route('/DeleteUser', methods=['DELETE'])
-def delete_user():
-    data = request.get_json()
-    if not data or 'username' not in data:
-        return jsonify({"error": "Username is required"}), 400
-
-    username = data['username']
-
-    # Call the function to delete the user
-    result = AllOperations.DeleteUser(username)
-
-    if "deleted successfully" in result:
-        return jsonify({"message": result}), 200
+def Delete_user():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_credentials = auth_header.split(" ")[1]
+        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+        username, password = decoded_credentials.split(":", 1)
     else:
-        return jsonify({"error": result}), 404
+        return jsonify({"message": "Authentication header is missing."}), 400
+    session_status = AllOperations.CheckSession(username, user_sessions)
+    if session_status:
+        auth = Operations.Authentication(username, password)
+        if auth:
+            data = request.get_json()
+            if not data or 'username' not in data:
+                return jsonify({"error": "Username is required"}), 400
+
+            username = data['username']
+
+            # Call the function to delete the user
+            result = AllOperations.DeleteUser(username)
+
+            if "deleted successfully" in result:
+                return jsonify({"message": result}), 200
+            else:
+                return jsonify({"error": result}), 404
+        else:
+            return jsonify({"error": "User is not registered."}), 404
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+    
     
 @app.route('/ForgotPassword', methods=['POST'])
 def ForgotPassword():
@@ -92,41 +126,113 @@ def ForgotPassword():
     else:
         return jsonify({"error": "Unknow Error, Please contact Admin."}), 500
     
-@app.route('/Employer/CreateJob', methods=['POST'])
+@app.route('/CreateJob', methods=['POST'])
 def CreateJob():
-    data = request.get_json()  # Get the data from the request body
-    result = Employer.CreateJob(data)  # Call the CreateJob method from Employer
-    
-    if isinstance(result, tuple) and len(result) == 2:
-        return result[0], result[1]
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_credentials = auth_header.split(" ")[1]
+        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+        username, password = decoded_credentials.split(":", 1)
     else:
-        return jsonify({"error": "Unexpected result format"}), 500
-    
-@app.route('/Employer/ShowApplications', methods=['GET'])
+        return jsonify({"message": "Authentication header is missing."}), 400
+    session_status = AllOperations.CheckSession(username, user_sessions)
+    if session_status:
+        check = Employer.CheckEmployer(username, password)
+        if check:
+            auth = Operations.Authentication(username, password)
+            if auth:
+                data = request.get_json()  # Get the data from the request body
+                result = Employer.CreateJob(data)  # Call the CreateJob method from Employer
+                
+                if isinstance(result, tuple) and len(result) == 2:
+                    return result[0], result[1]
+                else:
+                    return jsonify({"error": "Unexpected result format"}), 500
+            else:
+                return jsonify({"error": "User is not registered."}), 404
+        else:
+            return jsonify({"error": "Not authorized except Employer."}), 401
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+
+@app.route('/UpdateApplication', methods=['POST'])
+def UpdateApplication():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_credentials = auth_header.split(" ")[1]
+        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+        username, password = decoded_credentials.split(":", 1)
+    else:
+        return jsonify({"message": "Authentication header is missing."}), 400
+    session_status = AllOperations.CheckSession(username, user_sessions)
+    if session_status:
+        check = Employer.CheckEmployer(username, password)
+        if check:
+            auth = Operations.Authentication(username, password)
+            if auth: 
+                pass
+            else:
+                return jsonify({"error": "User is not registered."}), 404
+        else:
+            return jsonify({"error": "Not authorized except Employer."}), 401
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+        
+@app.route('/ShowApplications', methods=['GET'])
 def ShowApplications():
-    result = Employer.ShowApplications()  # Call the CreateJob method from Employer
-    
-    if isinstance(result, tuple) and len(result) == 2:
-        return result[0], result[1]
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_credentials = auth_header.split(" ")[1]
+        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+        username, password = decoded_credentials.split(":", 1)
     else:
-        return jsonify({"error": "Unexpected result format"}), 500
-    
+        return jsonify({"message": "Authentication header is missing."}), 400
+    session_status = AllOperations.CheckSession(username, user_sessions)
+    if session_status:
+        auth = Operations.Authentication(username, password)
+        if auth:
+            result = Employer.ShowApplications()  # Call the CreateJob method from Employer
+            
+            if isinstance(result, tuple) and len(result) == 2:
+                return result[0], result[1]
+            else:
+                return jsonify({"error": "Unexpected result format"}), 500
+        else:
+            return jsonify({"error": "User is not registered."}), 404
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+        
 @app.route('/ShowJobs', methods=['GET'])
 def ShowJobs():
-    result = Employer.ShowJobs()  # Call the CreateJob method from Employer
-    
-    if result:
-        return result
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_credentials = auth_header.split(" ")[1]
+        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
+        username, password = decoded_credentials.split(":", 1)
     else:
-        return jsonify({"error": "Unexpected result format"}), 500
-    
+        return jsonify({"message": "Authentication header is missing."}), 400
+    session_status = AllOperations.CheckSession(username, user_sessions)
+    if session_status:
+        auth = Operations.Authentication(username, password)
+        if auth:
+            result = Employer.ShowJobs()  # Call the CreateJob method from Employer
+            
+            if result:
+                return result
+            else:
+                return jsonify({"error": "Unexpected result format"}), 500
+        else:
+            return jsonify({"error": "User is not registered."}), 404
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+        
 @app.route('/ListOrganization',methods=['GET'])
-def ListOrg():
+def ListOrganization():
     result = AllOperations.ShowOrganizations()
     return result
 
 @app.route('/ShowUserType',methods=['GET'])
-def ListOrganization():
+def ListUserTypes():
     result = AllOperations.ShowUserTypes()
     return result
 

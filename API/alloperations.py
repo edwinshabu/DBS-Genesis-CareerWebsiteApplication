@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime
 import os
 from time import sleep
 import mysql.connector
@@ -13,6 +14,19 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 class AllOperations:
+    def CheckSession(username, user_sessions):
+        session_id = f"session_{username}"
+        if session_id not in user_sessions:
+            return False
+        session = user_sessions[session_id]
+        if datetime.now() > session["expiry_time"]:
+            del user_sessions[session_id]  # Clean up expired session
+            return False
+        return True
+    
+
+
+
     def SendEmail(to_email, message):
         smtp_server = 'smtp.gmail.com'  # Replace with your SMTP server
         smtp_port = 587
@@ -169,6 +183,32 @@ class AllOperations:
 
 
 class Employer:
+    def CheckEmployer(username, password):
+        try:
+            connection = Connection.get_db_connection(username, password)
+            cursor = connection.cursor()
+            query = """
+    SELECT 
+        CASE 
+            WHEN ut.Type = 'Employer' THEN TRUE
+            ELSE FALSE
+        END AS IsEmployer
+    FROM Users u
+    JOIN UserType ut ON u.UserTypeId = ut.Id
+    WHERE u.Username = %s AND u.Password = %s;
+    """
+            cursor.execute(query, (username, password)) 
+            result = cursor.fetchone() 
+            return result[0] if result else False
+        except Exception as e:
+                print(f"Error: {e}")
+                return False
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+
+
     def CreateJob(data):
         try:
             auth_header = request.headers.get('Authorization')

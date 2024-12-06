@@ -25,6 +25,27 @@ class Validation:
 
 class Operations:
 
+    def Authentication(username, password):
+        try:
+            conn = Connection.get_db_connection('root', 'Root@123')
+            cursor = conn.cursor(dictionary=True)
+            query = """
+            SELECT 1
+            FROM users
+            WHERE username = %s AND password = %s;
+            """
+            cursor.execute(query, (username, password))
+            result = cursor.fetchone()
+            return result is not None
+        except Error as e:
+            print(f"Error checking user existence: {e}")
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+        return False
+
+
     def Login(username, password):
         
 
@@ -55,7 +76,7 @@ class Operations:
             else:
                 cursor.close()
                 connection.close() 
-                return jsonify({'message': 'User is not registered.'}), 404
+                return jsonify({'message': 'User is not Authorized.'}), 401
         except Error as e:
             cursor.close()
             connection.close() 

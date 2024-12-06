@@ -117,6 +117,8 @@ def submit():
                 return render_template('index.html', popup_message=api_response.get("message", "Login failed."))
         elif response.status_code == 404:
             return render_template('index.html', popup_message = "User is not registered.")
+        elif response.status_code == 401:
+            return render_template('index.html', popup_message = "User is not authorized to Access.")
         else:
             return render_template('index.html', popup_message="Credentials are incorrect or User is not registered.")
     except Exception as e:
