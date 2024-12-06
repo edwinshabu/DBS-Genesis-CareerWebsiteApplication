@@ -184,8 +184,7 @@ class Operations:
             return session
         except Exception as e:
             return None
-
-
+        
     def Register(data):
         # Establish database connection
         auth_header = request.headers.get('Authorization')

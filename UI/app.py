@@ -22,7 +22,7 @@ def userdash():
 
 @app.route('/logout')
 def Signout():
-    username = 'pete'
+    username = 'raj'
     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
     api_url = f'{API_URL}/Signout'
     headers = {
@@ -39,7 +39,7 @@ def Signout():
 @app.route('/applications')
 def fetch_applications():
     # Replace 'your-username' and 'your-password' with actual credentials
-    username = 'pete'
+    username = 'raj'
     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
     
     # API endpoint
@@ -62,7 +62,7 @@ def fetch_applications():
 
 # @app.route('/appupdate')
 # def appupdate():
-#     username = 'pete'
+#     username = 'raj'
 #     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
     
 #     # API endpoint
@@ -85,7 +85,7 @@ def fetch_applications():
 
 # @app.route('/appupdate', methods=['GET', 'POST'])
 # def appupdate():
-#     username = 'pete'  # This should be dynamically set based on the logged-in user
+#     username = 'raj'  # This should be dynamically set based on the logged-in user
 #     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
     
 #     # API endpoint for getting applications
@@ -138,7 +138,7 @@ def fetch_applications():
 
 @app.route('/appupdate', methods=['GET', 'POST'])
 def appupdate():
-    username = 'pete'  # This should be dynamically set based on the logged-in user
+    username = 'raj'  # This should be dynamically set based on the logged-in user
     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
     
     # API endpoint for getting applications
@@ -186,13 +186,81 @@ def appupdate():
     # Render the HTML page with the latest applications data
     return render_template('updateapplication.html', applications=applications)
 
+@app.route('/apply-job', methods=['POST'])
+def apply_job():
+    job_id = request.form.get("jobid")
+    if not job_id:
+        popup_message = "Job Id is required."
+        return render_template('userjobs.html', popup_message=popup_message)
+
+    api_url = f"{API_URL}/ApplyApplication"
+    username = 'raj'  # Change based on user context
+    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+
+    headers = {
+        "Authorization": f"Basic {auth_base64}",
+        "Content-Type": "application/json"
+    }
+    payload = {"JobId": job_id}
+
+    try:
+        response = requests.post(api_url, headers=headers, json=payload)
+
+        api_response = response.json()
+
+        if api_response.get('message') == 'Thanks for applying to the Job.':
+            popup_message = "Successfully applied to the job."
+        elif api_response.get('message') == "Already Applied":
+            popup_message = "You have already applied to this job."
+        else:
+            popup_message = "Unknown error. Please try again."
+        
+    except requests.exceptions.RequestException as e:
+        popup_message = "Contact Admin."
+
+    return render_template('userjobs.html', popup_message=popup_message)
+
+@app.route('/userjobs')
+def userjobs():
+    # Replace with the actual API endpoint
+    api_url = f"{API_URL}/ShowJobs"
+    
+    try:
+        username = 'raj'
+        # Make a GET request to fetch data from the API
+        auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+        response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        api_data = response.json()
+
+        # Process and prepare job data for rendering
+        job_data = [
+            {
+                "jobid": job[0],
+                "created_date": job[1],
+                "last_date": job[2],
+                "title": job[4],
+                "description": job[6],
+                "url": job[3],
+                "who_can_apply": job[5],
+                "required_skills": job[7],
+            }
+            for index, job in enumerate(api_data) if index != 0 and index != len(api_data) - 1
+        ]
+    except requests.RequestException as e:
+        # Log error and provide fallback data or error message
+        print(f"Error fetching data from API: {e}")
+        job_data = []
+
+    return render_template('userjobs.html', jobs=job_data)
+
 @app.route('/showjobs')
 def showjobs():
     # Replace with the actual API endpoint
     api_url = f"{API_URL}/ShowJobs"
     
     try:
-        username = 'pete'
+        username = 'raj'
         # Make a GET request to fetch data from the API
         auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
@@ -383,7 +451,7 @@ def create_job():
     apply_url = request.form.get('apply-url')
     last_date = request.form.get('last-date')
 
-    username = 'pete'  # Replace with actual username
+    username = 'raj'  # Replace with actual username
     encoded_username = base64.b64encode(username.encode('utf-8')).decode('utf-8')  # Base64 encoding
 
     # Prepare the request body

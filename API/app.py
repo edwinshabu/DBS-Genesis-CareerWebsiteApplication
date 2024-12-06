@@ -189,16 +189,18 @@ def ApplyJob():
             if JobId:
                 pass
             else:
-                return jsonify({"error": "JobId is missing in the request body"}), 400
+                return jsonify({"message": "JobId is missing in the request body"}), 400
             status = AllOperations.ApplyApplication(username, password, JobId)
-            if status:
-                return jsonify({"error": "Thanks for applying to the Job."}), 200
+            if status == True:
+                return jsonify({"message": "Thanks for applying to the Job."}), 200
+            elif status == False:
+                return jsonify({"message": "An error occured."}), 500
             else:
-                jsonify({"error": "An error occured."}), 500
+                return status
         else:
-            return jsonify({"error": "Not authorized for Employer."}), 401
+            return jsonify({"message": "Not authorized for Employer."}), 401
     else:
-        return jsonify({"timeout": "Session Timeout"}), 401
+        return jsonify({"message": "Session Timeout"}), 401
 
 
 

@@ -114,11 +114,25 @@ class AllOperations:
             connection = Connection.get_db_connection(username, password)
             if connection.is_connected():
                 cursor = connection.cursor()
+                  
                 user_id = "SELECT Id, Email from Users WHERE Username = %s;"
                 cursor.execute(user_id, (username,))
                 ids = cursor.fetchone() 
                 if ids:
                     id = ids[0]
+                    check_query = """
+SELECT EXISTS(
+    SELECT 1 
+    FROM Applications 
+    WHERE JobId = %s
+      AND UserId = %s
+) AS HasApplied;
+"""
+                    cursor.execute(check_query, (job_id,id,))
+                    results = cursor.fetchone()
+                    if results[0] == 1:
+                        return jsonify({"message":"Already Applied"}), 400
+
                     process_step = 'Applied'
                     insert_query = "INSERT INTO Applications (JobId, UserId, ProcessStep) VALUES (%s, %s, %s)"
                     role = "SELECT Title, Description FROM JobPosting WHERE Id = %s;"
