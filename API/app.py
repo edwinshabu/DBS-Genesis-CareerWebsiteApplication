@@ -197,7 +197,10 @@ def UpdateApplication():
         if check:
             auth = Operations.Authentication(username, password)
             if auth: 
-                pass
+                data = request.get_json()
+                status = Employer.UpdateApplication(data,username, password)
+                if status:
+                    return status
             else:
                 return jsonify({"error": "User is not registered."}), 404
         else:

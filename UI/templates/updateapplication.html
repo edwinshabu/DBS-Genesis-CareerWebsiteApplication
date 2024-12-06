@@ -63,17 +63,49 @@
         .back-button:hover {
             background-color: #45a049;
         }
+        select {
+            padding: 5px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: none; /* Hide button initially */
+        }
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
         @media only screen and (max-width: 768px) {
             table th, table td {
                 padding: 8px;
             }
+        }
+        .submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            /* Remove this line to make the button visible */
+            display: block; /* Ensure the button is visible */
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Genesis Career - All Applications</h1>
+    <h1>Genesis Career - Application Decision</h1>
 </header>
 
 <div class="container">
@@ -92,6 +124,8 @@
                     <th>Email Address</th>
                     <th>Contact</th>
                     <th>Process of Recruitment</th>
+                    <th>Status</th>
+                    <th>Submit</th>
                 </tr>
             </thead>
             <tbody>
@@ -105,9 +139,28 @@
                     <td>{{ application[5] }}</td>
                     <td>{{ application[6] }}</td>
                     <td>{{ application[7] }}</td>
+                    <td>
+                        <form action="/appupdate" method="POST">
+                            <select name="process_{{ application[0] }}" required>
+                                <option value="" disabled selected>Update Process</option>
+                                <option value="Reviewed">Reviewed</option>
+                                <option value="Interview">Interview</option>
+                                <option value="Offered">Offered</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                    </td>
+                    <td>
+                        <!-- Add hidden input for Email -->
+                        <input type="hidden" name="email" value="{{ application[5] }}">
+                        <input type="hidden" name="jobid" value="{{ application[0] }}">
+                        <input type="hidden" name="username" value="{{ application[4] }}">
+                        <input type="hidden" name="title" value="{{ application[3] }}">
+                        <button type="submit" class="submit-btn">Submit</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
-            </tbody>    
+            </tbody>
         </table>
     </div>
 </div>

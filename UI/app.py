@@ -1,6 +1,6 @@
 import base64
 import requests
-from flask import Flask, request, render_template
+from flask import Flask, redirect, request, render_template, url_for
 
 app = Flask(__name__)
 
@@ -39,6 +39,132 @@ def fetch_applications():
     
     # Render the HTML page and pass data to the template
     return render_template('applicationrecieved.html', applications=data)
+
+# @app.route('/appupdate')
+# def appupdate():
+#     username = 'pete'
+#     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    
+#     # API endpoint
+#     api_url = f'{API_URL}/ShowApplications'
+    
+#     # Make a GET request to the API with the Authorization header
+#     headers = {
+#         'Authorization': f'Basic {auth_base64}'
+#     }
+    
+#     response = requests.get(api_url, headers=headers)
+    
+#     if response.status_code == 200:
+#         data = response.json()
+#     else:
+#         data = []
+    
+#     # Render the HTML page and pass data to the template
+#     return render_template('updateapplication.html', applications=data)
+
+# @app.route('/appupdate', methods=['GET', 'POST'])
+# def appupdate():
+#     username = 'pete'  # This should be dynamically set based on the logged-in user
+#     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    
+#     # API endpoint for getting applications
+#     api_url = f'{API_URL}/ShowApplications'
+    
+#     # Make a GET request to the API with the Authorization header
+#     headers = {
+#         'Authorization': f'Basic {auth_base64}'
+#     }
+    
+#     response = requests.get(api_url, headers=headers)
+    
+#     if response.status_code == 200:
+#         applications = response.json()
+#     else:
+#         return render_template('index.html', popup_message="Session Expired.")
+    
+#     # Handle the POST request to update application status
+#     if request.method == 'POST':
+#         # Retrieve the jobid, username, and status from the form
+#         jobid = request.form['jobid']
+#         username = request.form['username']
+#         email = request.form['email']  # Get the email from the hidden input field
+#         process = request.form[f'process_{jobid}'] 
+#         # Construct the request body for updating the application status
+#         update_url = f'{API_URL}/UpdateApplication'
+#         request_body = {
+#             'jobid': jobid,
+#             'username': username,
+#             'email': email,  # Add email to the request body
+#             'process': process 
+#         }
+        
+#         # Send the POST request to update the application
+#         response = requests.post(update_url, json=request_body, headers=headers)
+        
+#         if response.status_code == 200:
+#             message = response.json().get('message', 'Unknown error')
+#             if message == "Application Updated!":
+#                 return render_template('updateapplication.html', popup_message="Application updated!")
+
+#             else:
+#                 return render_template('updateapplication.html', popup_message="Failed to update the Application.")
+
+#         else:
+#             return render_template('updateapplication.html', popup_message="Failed to update the Application.")
+    
+#     # Render the HTML page and pass data to the template
+#     return render_template('updateapplication.html', applications=applications)
+
+@app.route('/appupdate', methods=['GET', 'POST'])
+def appupdate():
+    username = 'pete'  # This should be dynamically set based on the logged-in user
+    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    
+    # API endpoint for getting applications
+    api_url = f'{API_URL}/ShowApplications'
+    
+    # Make a GET request to the API with the Authorization header
+    headers = {
+        'Authorization': f'Basic {auth_base64}'
+    }
+    
+    response = requests.get(api_url, headers=headers)
+    
+    if response.status_code == 200:
+        applications = response.json()
+    else:
+        return render_template('index.html', popup_message="Session Expired.")
+    
+    # Handle the POST request to update application status
+    if request.method == 'POST':
+        jobid = request.form['jobid']
+        username = request.form['username']
+        email = request.form['email']
+        process = request.form[f'process_{jobid}']
+        title = request.form['title']
+        update_url = f'{API_URL}/UpdateApplication'
+        request_body = {
+            'jobid': jobid,
+            'username': username,
+            'email': email,
+            'process': process,
+            'title': title
+        }
+        
+        response = requests.post(update_url, json=request_body, headers=headers)
+        
+        if response.status_code == 200:
+            message = response.json().get('message', 'Unknown error')
+            if message == "Application Updated!":
+                return redirect(url_for('appupdate'))  # Redirect after successful update
+            else:
+                return render_template('updateapplication.html', popup_message="Failed to update the Application.")
+        else:
+            return render_template('updateapplication.html', popup_message="Failed to update the Application.")
+    
+    # Render the HTML page with the latest applications data
+    return render_template('updateapplication.html', applications=applications)
 
 @app.route('/showjobs')
 def showjobs():

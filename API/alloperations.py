@@ -404,6 +404,7 @@ class Employer:
                     cursor = connection.cursor()
                     cursor.execute("""
 SELECT 
+    JobPosting.Id,
     Applications.AppliedOn,
     JobPosting.Description AS JobDescription,
     JobPosting.Title AS JobTitle,
@@ -447,3 +448,43 @@ JOIN
 
         except Exception as ex:
             return jsonify({"error": str(ex)}), 500
+    
+    def UpdateApplication(data, username, password):
+        try: 
+            process = data.get('process')
+            job_id = data.get('jobid')
+            applicant = data.get('username')
+            email = data.get('email')
+            job_title = data.get('title')
+            connection = Connection.get_db_connection(username, password) 
+            if connection == 500:
+                return jsonify({"error": "Unable to update the Application, Contact Admin"}), 500
+            if connection.is_connected():
+                cursor = connection.cursor()
+                query = """
+UPDATE Applications
+SET ProcessStep = %s
+WHERE JobId = %s 
+AND UserId = (SELECT Id FROM Users WHERE Username = %s);
+"""
+                message_body = f"""
+Dear {applicant},
+
+We are writing to update you on the status of your job application for the position of {job_title}.
+
+Your application status for Job Id: {job_id} is {process}.
+
+We will notify you about any further updates.
+
+Best regards,
+Genesis Career
+"""
+                
+                cursor.execute(query,(process, job_id, applicant,))
+                connection.commit()
+                AllOperations.SendEmail(email, message_body)
+                return jsonify({"message":"Application Updated!"}), 200
+
+            connection.close()
+        except Exception as ex:
+            return jsonify({"error": "Unable to update the Application, Contact Admin"}), 500
