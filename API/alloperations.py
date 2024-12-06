@@ -37,7 +37,7 @@ class AllOperations:
         msg = MIMEMultipart()
         msg['From'] = smtp_user
         msg['To'] = to_email
-        msg['Subject'] = 'Genesis Career - User Password.'
+        msg['Subject'] = 'Genesis Career'
         body = f'{message}'
         msg.attach(MIMEText(body, 'plain'))
         try:
@@ -109,11 +109,42 @@ class AllOperations:
         except Exception as ex:
             return jsonify({"message": f"Unable to establish connection to Database. Please contact Administrator."}), 500
 
-    # def ApplyApplication(username, password, data):
-    #     try:
-    #         connection = Connection.get_db_connection('root', 'Root@123')
-    #         if connection.is_connected():
-    #             cursor = connection.cursor()
+    def ApplyApplication(username, password, job_id):
+        try:
+            connection = Connection.get_db_connection(username, password)
+            if connection.is_connected():
+                cursor = connection.cursor()
+                user_id = "SELECT Id, Email from Users WHERE Username = %s;"
+                cursor.execute(user_id, (username,))
+                ids = cursor.fetchone() 
+                if ids:
+                    id = ids[0]
+                    process_step = 'Applied'
+                    insert_query = "INSERT INTO Applications (JobId, UserId, ProcessStep) VALUES (%s, %s, %s)"
+                    role = "SELECT Title FROM JobPosting WHERE Id = %s;"
+                    cursor.execute(role, (job_id,))
+                    result = cursor.fetchone()
+                    cursor.execute(insert_query, (job_id, id, process_step))
+                    connection.commit()
+                    title = result[0]
+                    message = f"""
+Hello {username},
+
+Thanks for applying for the Job Role - {title}. 
+You will hear back shortly.
+
+Regards,
+Genesis Career
+"""
+                    AllOperations.SendEmail(id[1], message)
+                    return True
+                else:
+                    id = False
+            else:
+                return False
+        except:
+            return False
+
 
 
     def ListAllUsers():
@@ -222,6 +253,33 @@ class AllOperations:
 
 
 
+    def CheckUserTypeId(username):
+        # Establish database connection
+        connection = Connection.get_db_connection('root', 'Root@123')
+        cursor = connection.cursor()
+
+        try:
+            # Query to get the UserTypeId based on the Username
+            typeId_query = "SELECT Id FROM Users WHERE Username = %s;"
+            cursor.execute(typeId_query, (username,))
+            user_id = cursor.fetchone()
+
+            if user_id:
+                return user_id[0]  # Type not found for the UserTypeId
+            else:
+                return None  # User not found
+
+        except mysql.connector.Error as e:
+            print(f"Error: {e}")
+            return None
+
+        finally:
+            # Close the cursor and connection
+            cursor.close()
+            connection.close()
+
+
+
 
 
         
@@ -312,8 +370,29 @@ class Employer:
             connection.rollback()
             return jsonify({"error": str(ex)}), 500
 
-    
-    def ShowApplications(username, password):
+    def ShowSpecificApplications(username, password):
+        try:
+                # Establish DB connection
+                connection = Connection.get_db_connection(username, password)
+
+                if connection.is_connected():
+                    cursor = connection.cursor()
+                    id = AllOperations.CheckUserTypeId(username)
+                    if type == None:
+                        return jsonify({"error": "An unknown error occured. Please contact Admin."}), 500
+                    q = "SELECT * FROM Applications WHERE UserId = %s"
+                    cursor.execute(q, (id,))
+                    rows = cursor.fetchall()
+                    if not rows:  # If the list is empty, return an empty JSON array
+                        return jsonify({"message": "You have not applied for any Job."}), 200
+                    return jsonify(rows), 200
+
+                connection.close()
+
+        except Exception as ex:
+            return jsonify({"error": str(ex)}), 500
+
+    def ShowAllApplications(username, password):
         try:
                 # Establish DB connection
                 connection = Connection.get_db_connection(username, password)
@@ -324,7 +403,7 @@ class Employer:
                     rows = cursor.fetchall()
                     if not rows:  # If the list is empty, return an empty JSON array
                         return jsonify({"message": "No applications"}), 200
-                    return jsonify(rows)
+                    return jsonify(rows), 200
 
                 connection.close()
 

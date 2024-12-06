@@ -13,7 +13,7 @@ app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions on the filesystem
 session = Session()
 user_sessions = {}
-SESSION_TIMEOUT = 30
+SESSION_TIMEOUT = 3000
 
 # Login and Registeration #####################################
 
@@ -152,6 +152,36 @@ def CreateJob():
             return jsonify({"error": "Not authorized except Employer."}), 401
     else:
         return jsonify({"timeout": "Session Timeout"}), 401
+    
+@app.route('/ApplyApplication', methods=['POST'])
+def ApplyJob():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
+    else:
+        return jsonify({"message": "Authentication header is missing."}), 400
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
+        check = Employer.CheckEmployer(username, password)
+        if not check:
+            data = request.get_json()
+            JobId = data.get('JobId')
+            if JobId:
+                pass
+            else:
+                return jsonify({"error": "JobId is missing in the request body"}), 400
+            status = AllOperations.ApplyApplication(username, password, JobId)
+            if status:
+                return jsonify({"error": "Thanks for applying to the Job."}), 401
+            else:
+                jsonify({"error": "An error occured."}), 500
+        else:
+            return jsonify({"error": "Not authorized for Employer."}), 401
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+
+
 
 @app.route('/UpdateApplication', methods=['POST'])
 def UpdateApplication():
@@ -187,12 +217,30 @@ def ShowApplications():
     if password:
         auth = Operations.Authentication(username, password)
         if auth:
-            result = Employer.ShowApplications(username, password)  # Call the CreateJob method from Employer
+            result = Employer.ShowAllApplications(username, password)  # Call the CreateJob method from Employer
             
-            if isinstance(result, tuple) and len(result) == 2:
-                return result[0], result[1]
-            else:
-                return jsonify({"error": "Unexpected result format"}), 500
+            return result
+        else:
+            return jsonify({"error": "User is not registered."}), 404
+    else:
+        return jsonify({"timeout": "Session Timeout"}), 401
+        
+
+@app.route('/ShowSpecificApplications', methods=['GET'])
+def ShowSpecificApplications():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
+    else:
+        return jsonify({"message": "Authentication header is missing."}), 400
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
+        auth = Operations.Authentication(username, password)
+        if auth:
+            result = Employer.ShowSpecificApplications(username, password)  # Call the CreateJob method from Employer
+            
+            return result
         else:
             return jsonify({"error": "User is not registered."}), 404
     else:
