@@ -16,6 +16,40 @@ def index():
 def empdash():
     return render_template('employer-dash.html', popup_message=None)
 
+@app.route('/showjobs')
+def showjobs():
+    # Replace with the actual API endpoint
+    api_url = f"{API_URL}/ShowJobs"
+    
+    try:
+        username = 'pete'
+        # Make a GET request to fetch data from the API
+        auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+        response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        api_data = response.json()
+
+        # Process and prepare job data for rendering
+        job_data = [
+            {
+                "created_date": job[1],
+                "last_date": job[2],
+                "title": job[4],
+                "description": job[6],
+                "url": job[3],
+                "who_can_apply": job[5],
+                "required_skills": job[7],
+            }
+            for index, job in enumerate(api_data) if index != 0 and index != len(api_data) - 1
+        ]
+    except requests.RequestException as e:
+        # Log error and provide fallback data or error message
+        print(f"Error fetching data from API: {e}")
+        job_data = []
+
+    return render_template('showjobs.html', jobs=job_data)
+
+
 @app.route('/forgot')
 def forgot():
     return render_template('forgot.html', popup_message=None)
