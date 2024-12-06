@@ -121,22 +121,25 @@ class AllOperations:
                     id = ids[0]
                     process_step = 'Applied'
                     insert_query = "INSERT INTO Applications (JobId, UserId, ProcessStep) VALUES (%s, %s, %s)"
-                    role = "SELECT Title FROM JobPosting WHERE Id = %s;"
+                    role = "SELECT Title, Description FROM JobPosting WHERE Id = %s;"
                     cursor.execute(role, (job_id,))
                     result = cursor.fetchone()
                     cursor.execute(insert_query, (job_id, id, process_step))
                     connection.commit()
                     title = result[0]
+                    desc = result[1]
                     message = f"""
 Hello {username},
 
-Thanks for applying for the Job Role - {title}. 
+Thanks for applying for the Job Role - {title}, for below description:
+{desc}
+
 You will hear back shortly.
 
 Regards,
 Genesis Career
 """
-                    AllOperations.SendEmail(id[1], message)
+                    AllOperations.SendEmail(ids[1], message)
                     return True
                 else:
                     id = False

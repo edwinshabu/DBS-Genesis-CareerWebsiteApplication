@@ -103,7 +103,7 @@ CREATE TABLE Applications (
     Id VARCHAR(50) PRIMARY KEY DEFAULT UUID() NOT NULL UNIQUE,
     AppliedOn DATE DEFAULT CURRENT_DATE,
     JobId VARCHAR(50) NOT NULL, FOREIGN KEY (JobId) REFERENCES JobPosting(Id),
-    UserId VARCHAR(50) NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id),
+    UserId VARCHAR(50) NOT NULL UNIQUE, FOREIGN KEY (UserId) REFERENCES Users(Id),
     ProcessStep ENUM('Applied', 'Reviewed', 'Interview', 'Offered') NOT NULL
 );
 

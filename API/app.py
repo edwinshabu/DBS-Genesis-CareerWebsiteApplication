@@ -173,7 +173,7 @@ def ApplyJob():
                 return jsonify({"error": "JobId is missing in the request body"}), 400
             status = AllOperations.ApplyApplication(username, password, JobId)
             if status:
-                return jsonify({"error": "Thanks for applying to the Job."}), 401
+                return jsonify({"error": "Thanks for applying to the Job."}), 200
             else:
                 jsonify({"error": "An error occured."}), 500
         else:
