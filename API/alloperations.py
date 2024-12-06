@@ -17,15 +17,16 @@ class AllOperations:
     def CheckSession(username, user_sessions):
         session_id = f"session_{username}"
         if session_id not in user_sessions:
-            return False
+            return None  # No session found
+        
         session = user_sessions[session_id]
         if datetime.now() > session["expiry_time"]:
             del user_sessions[session_id]  # Clean up expired session
-            return False
-        return True
-    
-
-
+            return None
+        
+        # Return the password if the session is valid
+        return session.get("password")
+  
 
     def SendEmail(to_email, message):
         smtp_server = 'smtp.gmail.com'  # Replace with your SMTP server
@@ -108,7 +109,12 @@ class AllOperations:
         except Exception as ex:
             return jsonify({"message": f"Unable to establish connection to Database. Please contact Administrator."}), 500
 
-        
+    # def ApplyApplication(username, password, data):
+    #     try:
+    #         connection = Connection.get_db_connection('root', 'Root@123')
+    #         if connection.is_connected():
+    #             cursor = connection.cursor()
+
 
     def ListAllUsers():
         try:
@@ -180,6 +186,45 @@ class AllOperations:
         except Error as e:
             print(f"Error: {e}")
             return f"Error occurred: {e}"
+    
+    def CheckUserType(username):
+        # Establish database connection
+        connection = Connection.get_db_connection('root', 'Root@123')
+        cursor = connection.cursor()
+
+        try:
+            # Query to get the UserTypeId based on the Username
+            typeId_query = "SELECT UserTypeId FROM Users WHERE Username = %s;"
+            cursor.execute(typeId_query, (username,))
+            usertype_id = cursor.fetchone()
+
+            if usertype_id:
+                # Query to get the Type based on the UserTypeId
+                type_query = "SELECT Type FROM UserType WHERE Id = %s;"
+                cursor.execute(type_query, (usertype_id[0],))  # usertype_id[0] contains the Id
+                user_type = cursor.fetchone()
+
+                if user_type:
+                    return user_type[0]  # Returning the Type
+                else:
+                    return None  # Type not found for the UserTypeId
+            else:
+                return None  # User not found
+
+        except mysql.connector.Error as e:
+            print(f"Error: {e}")
+            return None
+
+        finally:
+            # Close the cursor and connection
+            cursor.close()
+            connection.close()
+
+
+
+
+
+        
 
 
 class Employer:
@@ -209,19 +254,8 @@ class Employer:
                 connection.close()
 
 
-    def CreateJob(data):
+    def CreateJob(data, username, password):
         try:
-            auth_header = request.headers.get('Authorization')
-            if auth_header and auth_header.startswith("Basic "):
-                # Extract base64 part of the header
-                base64_credentials = auth_header.split(" ")[1]
-                # Decode the base64 string
-                decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-                # Split into username and password
-                username, password = decoded_credentials.split(":", 1)
-            else:
-                return jsonify({"message": "User is not registered with us."}), 404
-                
             last_date = data.get("LastDate")
             url = data.get("UrlToApply")
             title = data.get("Title")
@@ -279,17 +313,8 @@ class Employer:
             return jsonify({"error": str(ex)}), 500
 
     
-    def ShowApplications():
+    def ShowApplications(username, password):
         try:
-            auth_header = request.headers.get('Authorization')
-            if auth_header and auth_header.startswith("Basic "):
-                # Extract base64 part of the header
-                base64_credentials = auth_header.split(" ")[1]
-                # Decode the base64 string
-                decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-                # Split into username and password
-                username, password = decoded_credentials.split(":", 1)
-
                 # Establish DB connection
                 connection = Connection.get_db_connection(username, password)
 
@@ -306,17 +331,8 @@ class Employer:
         except Exception as ex:
             return jsonify({"error": str(ex)}), 500
         
-    def ShowJobs():
+    def ShowJobs(username, password):
         try:
-            auth_header = request.headers.get('Authorization')
-            if auth_header and auth_header.startswith("Basic "):
-                # Extract base64 part of the header
-                base64_credentials = auth_header.split(" ")[1]
-                # Decode the base64 string
-                decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-                # Split into username and password
-                username, password = decoded_credentials.split(":", 1)
-
                 # Establish DB connection
                 connection = Connection.get_db_connection(username, password)
                 if connection == 500:

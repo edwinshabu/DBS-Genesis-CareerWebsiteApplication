@@ -65,14 +65,13 @@ class Operations:
             
             result = cursor.fetchone()
             if result:
-                # Convert binary data to Base64 string for ProfilePic and Resume if they exist
-                if result.get('ProfilePic'):
-                    result['ProfilePic'] = base64.b64encode(result['ProfilePic']).decode('utf-8')
-                if result.get('Resume'):
-                    result['Resume'] = base64.b64encode(result['Resume']).decode('utf-8')
-                cursor.close()
-                connection.close() 
-                return jsonify({'message': 'Login successful', 'user': result}), 200
+                usertype = AllOperations.CheckUserType(username)
+                if usertype:
+                    cursor.close()
+                    connection.close() 
+                    return jsonify({'message': 'Login successful', 'First Name': result['FirstName'], 'Last Name' : result['LastName'], 'UserType' : usertype }), 200
+                else:
+                    return jsonify({'message' : 'User is not properly registered.'}), 401
             else:
                 cursor.close()
                 connection.close() 

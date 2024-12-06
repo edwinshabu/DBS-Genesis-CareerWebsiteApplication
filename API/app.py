@@ -45,6 +45,7 @@ def login():
         session_id = f"session_{username}"
         user_sessions[session_id] = {
             "username": username,
+            "password" : password,
             "start_time": datetime.now(),
             "expiry_time": datetime.now() + timedelta(minutes=SESSION_TIMEOUT)
         }
@@ -58,13 +59,12 @@ def login():
 def listallusers():
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith("Basic "):
-        base64_credentials = auth_header.split(" ")[1]
-        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-        username, password = decoded_credentials.split(":", 1)
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
     else:
         return jsonify({"message": "Authentication header is missing."}), 400
-    session_status = AllOperations.CheckSession(username, user_sessions)
-    if session_status:
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
         auth = Operations.Authentication(username, password)
         if auth:
             output = AllOperations.ListAllUsers()
@@ -79,13 +79,12 @@ def listallusers():
 def Delete_user():
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith("Basic "):
-        base64_credentials = auth_header.split(" ")[1]
-        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-        username, password = decoded_credentials.split(":", 1)
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
     else:
         return jsonify({"message": "Authentication header is missing."}), 400
-    session_status = AllOperations.CheckSession(username, user_sessions)
-    if session_status:
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
         auth = Operations.Authentication(username, password)
         if auth:
             data = request.get_json()
@@ -130,19 +129,18 @@ def ForgotPassword():
 def CreateJob():
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith("Basic "):
-        base64_credentials = auth_header.split(" ")[1]
-        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-        username, password = decoded_credentials.split(":", 1)
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
     else:
         return jsonify({"message": "Authentication header is missing."}), 400
-    session_status = AllOperations.CheckSession(username, user_sessions)
-    if session_status:
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
         check = Employer.CheckEmployer(username, password)
         if check:
             auth = Operations.Authentication(username, password)
             if auth:
                 data = request.get_json()  # Get the data from the request body
-                result = Employer.CreateJob(data)  # Call the CreateJob method from Employer
+                result = Employer.CreateJob(data, username, password)  # Call the CreateJob method from Employer
                 
                 if isinstance(result, tuple) and len(result) == 2:
                     return result[0], result[1]
@@ -159,13 +157,12 @@ def CreateJob():
 def UpdateApplication():
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith("Basic "):
-        base64_credentials = auth_header.split(" ")[1]
-        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-        username, password = decoded_credentials.split(":", 1)
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
     else:
         return jsonify({"message": "Authentication header is missing."}), 400
-    session_status = AllOperations.CheckSession(username, user_sessions)
-    if session_status:
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
         check = Employer.CheckEmployer(username, password)
         if check:
             auth = Operations.Authentication(username, password)
@@ -182,16 +179,15 @@ def UpdateApplication():
 def ShowApplications():
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith("Basic "):
-        base64_credentials = auth_header.split(" ")[1]
-        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-        username, password = decoded_credentials.split(":", 1)
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
     else:
         return jsonify({"message": "Authentication header is missing."}), 400
-    session_status = AllOperations.CheckSession(username, user_sessions)
-    if session_status:
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
         auth = Operations.Authentication(username, password)
         if auth:
-            result = Employer.ShowApplications()  # Call the CreateJob method from Employer
+            result = Employer.ShowApplications(username, password)  # Call the CreateJob method from Employer
             
             if isinstance(result, tuple) and len(result) == 2:
                 return result[0], result[1]
@@ -206,16 +202,15 @@ def ShowApplications():
 def ShowJobs():
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith("Basic "):
-        base64_credentials = auth_header.split(" ")[1]
-        decoded_credentials = base64.b64decode(base64_credentials).decode("utf-8")
-        username, password = decoded_credentials.split(":", 1)
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
     else:
         return jsonify({"message": "Authentication header is missing."}), 400
-    session_status = AllOperations.CheckSession(username, user_sessions)
-    if session_status:
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
         auth = Operations.Authentication(username, password)
         if auth:
-            result = Employer.ShowJobs()  # Call the CreateJob method from Employer
+            result = Employer.ShowJobs(username, password)  # Call the CreateJob method from Employer
             
             if result:
                 return result
