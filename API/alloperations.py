@@ -402,7 +402,22 @@ class Employer:
 
                 if connection.is_connected():
                     cursor = connection.cursor()
-                    cursor.execute("SELECT * FROM Applications;")
+                    cursor.execute("""
+SELECT 
+    Applications.AppliedOn,
+    JobPosting.Description AS JobDescription,
+    JobPosting.Title AS JobTitle,
+    Users.Username,
+    Users.Email,
+    Users.Contact,
+    Applications.ProcessStep
+FROM 
+    Applications
+JOIN 
+    JobPosting ON Applications.JobId = JobPosting.Id
+JOIN 
+    Users ON Applications.UserId = Users.Id
+""")
                     rows = cursor.fetchall()
                     if not rows:  # If the list is empty, return an empty JSON array
                         return jsonify({"message": "No applications"}), 200

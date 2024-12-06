@@ -22,6 +22,28 @@
             font-weight: bold;
         }
 
+        .back-button {
+            position: absolute;
+            top: 70px; /* Adjusted top position */
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #45a049;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
         .container {
             max-width: 1200px;
             margin: 20px auto;
@@ -74,6 +96,8 @@
     </style>
 </head>
 <body>
+    <button class="back-button" onclick="window.history.back()">Back</button>
+
     <header>
         Genesis Career List - All Job Postings
     </header>

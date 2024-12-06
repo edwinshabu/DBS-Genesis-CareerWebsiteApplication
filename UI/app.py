@@ -16,6 +16,30 @@ def index():
 def empdash():
     return render_template('employer-dash.html', popup_message=None)
 
+@app.route('/applications')
+def fetch_applications():
+    # Replace 'your-username' and 'your-password' with actual credentials
+    username = 'pete'
+    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    
+    # API endpoint
+    api_url = f'{API_URL}/ShowApplications'
+    
+    # Make a GET request to the API with the Authorization header
+    headers = {
+        'Authorization': f'Basic {auth_base64}'
+    }
+    
+    response = requests.get(api_url, headers=headers)
+    
+    if response.status_code == 200:
+        data = response.json()
+    else:
+        data = []
+    
+    # Render the HTML page and pass data to the template
+    return render_template('applicationrecieved.html', applications=data)
+
 @app.route('/showjobs')
 def showjobs():
     # Replace with the actual API endpoint
