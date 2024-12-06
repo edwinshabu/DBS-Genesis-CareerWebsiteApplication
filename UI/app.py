@@ -12,30 +12,13 @@ API_URL = "http://127.0.0.1:8081/"  # Replace with your actual API URL
 def index():
     return render_template('index.html', popup_message=None)
 
+@app.route('/employer-dash')
+def empdash():
+    return render_template('employer-dash.html', popup_message=None)
+
 @app.route('/forgot')
 def forgot():
     return render_template('forgot.html', popup_message=None)
-
-# @app.route('/register')
-# def register():
-#     try:
-#         response_org = requests.get(f'{API_URL}/ListOrganization')
-#         if response_org.status_code == 200:
-#             org = response_org.json()
-#         else:
-#             return render_template('register.html', popup_message= "Unable to retrieve Organization List. Please contact Admin.")
-#     except:
-#         return render_template('register.html', popup_message= "Unable to retrieve Organization List. Please contact Admin.")
-
-#     try:
-#         user_types_response = requests.get(f'{API_URL}/ShowUserType')
-#         if user_types_response.status_code == 200:
-#             user_types = user_types_response.json()
-#         else:
-#             return render_template('register.html', popup_message= "Unable to retrieve User type List. Please contact Admin.")
-#     except:
-#         return render_template('register.html', popup_message= "Unable to retrieve User type List. Please contact Admin.")
-#     return render_template('register.html', popup_message=None, organiz=org, usertype=user_types)
 
     
 @app.route('/register')
@@ -49,14 +32,6 @@ def register():
     except requests.exceptions.RequestException as e:
         print(f"Organization API error: {e}")
         return render_template('register.html', popup_message="Failed to fetch organizations.", organizations=[])
-    # try:
-    #     response_org = requests.get(f'{API_URL}/ListOrganization')
-    #     response_org.raise_for_status()
-    #     org = response_org.json()
-    # except requests.exceptions.RequestException as e:
-    #     print(f"Organization API error: {e}")
-    #     return render_template('register.html', popup_message="Failed to fetch organizations.", organiz={}, usertype=[])
-
     try:
         user_types_response = requests.get(f'{API_URL}/ShowUserType')
         user_types_response.raise_for_status()
@@ -66,31 +41,6 @@ def register():
         return render_template('register.html', popup_message="Failed to fetch user types.", organizations=org_keys, usertype=[])
 
     return render_template('register.html', popup_message=None, organizations=org_keys, usertype=user_types)
-
-
-
-# @app.route('/register')
-# def register():
-#     try:
-#         response_org = requests.get(f'{API_URL}/ListOrganization')
-#         if response_org.status_code == 200:
-#             organization = response_org.json()
-#         else:
-#             organization = {}
-#     except:
-#         organization = {}
-
-#     try:
-#         # Fetch user types from the API
-#         user_types_response = requests.get(f'{API_URL}/ShowUserType')
-#         if user_types_response.status_code == 200:
-#             user_types = user_types_response.json()
-#         else:
-#             user_types = []  # Default to empty if API fails
-#     except Exception as e:
-#         user_types = []  # Default to empty if an error occurs
-
-#     return render_template('register.html', popup_message=None, organization=organization, usertype=user_types)
 
 @app.route('/submit', methods=['POST'])
 def submit():
@@ -112,7 +62,11 @@ def submit():
         if response.status_code == 200:
             api_response = response.json()
             if api_response.get("message") == 'Login successful':
-                return render_template('index.html', popup_message="Login successful!")
+                if api_response.get("UserType") == "Employer":
+                    user_data = api_response  # Store user data (if needed) in session or a context variable
+                    return render_template('employer-dash.html', user=user_data)
+                else:
+                    return render_template('index.html', popup_message="You are not authorized to access the employer dashboard.")
             else:
                 return render_template('index.html', popup_message=api_response.get("message", "Login failed."))
         elif response.status_code == 404:
@@ -149,64 +103,6 @@ def submitforgot():
             return render_template('forgot.html', popup_message="Unexpected error occured. Please contact the Admin.")
     except Exception as e:
         return render_template('forgot.html', popup_message=f"Error: {str(e)}")
-
-
-# @app.route('/submit-register', methods=['POST'])
-# def submitregister():
-#     try:
-#         username = request.form.get('username')
-#         password = request.form.get('password')
-#         first_name = request.form.get('first_name')
-#         last_name = request.form.get('last_name')
-#         email = request.form.get('email')
-#         contact = request.form.get('contact')
-#         skillset = request.form.get('skillset')
-#         user_type = request.form.get('user_type')
-#         organization = request.form.get('organization')
-#         profilepic = request.files.get('profilepic')
-#         resume = request.files.get('resume')
-
-#         # response = requests.post(f'{API_URL}/Register', )
-
-#         auth_string = f"{username}:{password}"
-#         auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
-
-#         # Prepare headers with the Base64 encoded Authorization
-#         headers = {
-#             'Content-Type': 'multipart/form-data',
-#             'Authorization': f'Basic {auth_base64}'
-#         }
-
-#         # Prepare data to be sent in the POST request as JSON
-#         data = {
-#             'FirstName': first_name,
-#             'LastName': last_name,
-#             'EmailId': email,
-#             'ContactDetails': contact,
-#             'SkillSet': skillset,
-#             'UserType': user_type,# This might need to be handled differently if it's a file
-#             'Organization': organization
-#         }
-
-#         files = {
-#             'ProfilePicture': (profilepic.filename, profilepic.stream, profilepic.content_type),
-#             'Resume': (resume.filename, resume.stream, resume.content_type)
-#         }
-
-#         # Sending the POST request to the API
-#         response = requests.post(f'{API_URL}/Register', headers=headers, data=data, files=files)
-
-        
-        
-#         if response.status_code == 200:
-#             api_response = response.json()
-#             if api_response.get("message") == 'Registration successful':
-#                 return render_template('register.html', popup_message=f'{response.reason}')
-#         else:
-#             print(response.status_code)
-#             return render_template('register.html', popup_message='Error Occured')
-#     except Exception as e:
-#         return render_template('register.html', popup_message=f"Error")
 
 @app.route('/submit-register', methods=['POST'])
 def submitregister():
@@ -268,6 +164,53 @@ def submitregister():
         # Handle any exceptions that occur
         print(f"Exception: {e}")
         return render_template('register.html', popup_message="An unexpected error occurred.")
+    
+@app.route('/createjob')
+def createjob():
+    return render_template('createjob.html')
+
+@app.route('/create_job', methods=['POST'])
+def create_job():
+    title = request.form.get('title')
+    description = request.form.get('description')
+    skills = request.form.get('skills')
+    who_can_apply = request.form.get('who-can-apply')
+    apply_url = request.form.get('apply-url')
+    last_date = request.form.get('last-date')
+
+    username = 'pete'  # Replace with actual username
+    encoded_username = base64.b64encode(username.encode('utf-8')).decode('utf-8')  # Base64 encoding
+
+    # Prepare the request body
+    data = {
+        "LastDate": last_date,
+        "UrlToApply": apply_url,
+        "Title": title,
+        "WhoCanApply": who_can_apply,
+        "Description": description,
+        "RequiredSkillSet": skills
+    }
+
+    # Make the API request
+    url = f'{API_URL}/CreateJob'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {encoded_username}'
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+
+    if response.status_code == 200 or response.status_code == 201:
+        response_data = response.json()
+        if 'message' in response_data:
+            # Success message
+            return render_template('employer-dash.html', popup_message="Job posting created successfully.")
+    elif 'timeout' in response_data:
+            return render_template('index.html', popup_message="Session Timeout. Please Login.")
+    else:
+        # Handle failure
+        return render_template('index.html', popup_message="Unknow error occured. Please contact Administrator.")
+
 
 
 if __name__ == '__main__':

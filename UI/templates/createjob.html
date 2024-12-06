@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genesis Career - Create Job Subject</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .section h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+            height: 150px;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        /* Popup Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .popup {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .popup p {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .popup button {
+            background-color: #ff5722;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .popup button:hover {
+            background-color: #e64a19;
+        }
+
+        /* Active classes for showing the popup */
+        .popup-overlay.active {
+            display: flex;
+        }
+
+        .popup.active {
+            display: block;
+        }
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            input, textarea {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .section h2 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    
+    <div class="container">
+        <h1>Genesis Career - Create Job Subject</h1>
+        <form action="/create_job" method="POST">
+            <div class="section">
+                <h2>Job Details</h2>
+                <div class="form-group">
+                    <label for="title">Job Title</label>
+                    <input type="text" id="title" name="title" placeholder="Enter job title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Job Description</label>
+                    <textarea id="description" name="description" placeholder="Describe the job" required></textarea>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Skills & Requirements</h2>
+                <div class="form-group">
+                    <label for="skills">Required Skill Sets</label>
+                    <input type="text" id="skills" name="skills" placeholder="Enter required skills" required>
+                </div>
+                <div class="form-group">
+                    <label for="who-can-apply">Who Can Apply</label>
+                    <input type="text" id="who-can-apply" name="who-can-apply" placeholder="Specify who can apply" required>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Application Details</h2>
+                <div class="form-group">
+                    <label for="apply-url">URL to Apply</label>
+                    <input type="url" id="apply-url" name="apply-url" placeholder="Enter application URL" required>
+                </div>
+                <div class="form-group">
+                    <label for="last-date">Last Date to Apply</label>
+                    <input type="date" id="last-date" name="last-date" required>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Submit Job Posting</button>
+        </form>
+    </div>
+    {% if popup_message %}
+    <div class="popup-overlay active">
+        <div class="popup active">
+            <p>{{ popup_message }}</p>
+            <form action="employer-dash" method="post">
+                <button type="submit">Close</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>

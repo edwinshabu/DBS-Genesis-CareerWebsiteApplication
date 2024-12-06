@@ -1,0 +1,13 @@
+employer
+
+welcome dashboard
+    - create job -> Show all Job Post
+    - show all Jobs
+    - Show all applications
+    - Decision page
+
+welcome dashboard
+    - show all Jobs
+    - apply job
+    - Decision
+    
