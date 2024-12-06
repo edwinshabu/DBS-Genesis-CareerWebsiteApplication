@@ -53,7 +53,26 @@ def login():
     else:
         return jsonify({"error": "User is not registered."}), 404
 
-    
+
+@app.route('/Signout', methods=['GET'])
+def Signout():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Basic "):
+        base64_username = auth_header.split(" ")[1]
+        username = base64.b64decode(base64_username).decode("utf-8")
+    else:
+        return jsonify({"message": "Authentication header is missing."}), 400
+    password = AllOperations.CheckSession(username, user_sessions)
+    if password:
+        session_id = f"session_{username}"
+        if session_id in user_sessions:
+            del user_sessions[session_id]
+            return jsonify({"message":"Logged Out"}), 200
+        else:
+            return jsonify({"message": "Logged Out"}), 200
+    else:
+        return jsonify({"message": "Logged Out"}), 200
+
 
 @app.route('/ListAllUsers', methods=['GET'])
 def listallusers():

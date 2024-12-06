@@ -16,6 +16,22 @@ def index():
 def empdash():
     return render_template('employer-dash.html', popup_message=None)
 
+@app.route('/logout')
+def Signout():
+    username = 'pete'
+    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    api_url = f'{API_URL}/Signout'
+    headers = {
+        'Authorization': f'Basic {auth_base64}'
+    }
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+    else:
+        data = []
+
+    return render_template('index.html', applications=data)
+
 @app.route('/applications')
 def fetch_applications():
     # Replace 'your-username' and 'your-password' with actual credentials
