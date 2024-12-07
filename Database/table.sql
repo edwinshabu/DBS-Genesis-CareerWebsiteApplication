@@ -78,7 +78,7 @@ CREATE TABLE Users (
     Resume LONGBLOB NOT NULL,
     Skills VARCHAR(50) NOT NULL,
     UserTypeId VARCHAR(50) NOT NULL, FOREIGN KEY (UserTypeId) REFERENCES UserType(Id),
-    OrganizationId VARCHAR(50) NOT NULL, FOREIGN KEY (OrganizationId) REFERENCES ORGANIZATION(Id)
+    OrganizationId VARCHAR(50) NOT NULL, FOREIGN KEY (OrganizationId) REFERENCES Organization(Id)
 );
 
 
