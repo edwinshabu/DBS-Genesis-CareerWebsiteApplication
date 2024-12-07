@@ -194,7 +194,7 @@
             <tbody>
                 {% for job in jobs %}
                 <tr>
-                    <td>{{ job.jobid }}</td>
+                    <td>{{ job.job_id }}</td>
                     <td>{{ job.created_date }}</td>
                     <td>{{ job.last_date }}</td>
                     <td>{{ job.title }}</td>
@@ -204,7 +204,7 @@
                     <td>{{ job.required_skills }}</td>
                     <td>
                         <form action="/apply-job" method="POST">
-                            <input type="hidden" name="jobid" value="{{ job.jobid }}">
+                            <input type="hidden" name="jobid" value="{{ job.job_id }}">
                             <button type="submit" class="action-button">Apply</button>
                         </form>
                     </td>

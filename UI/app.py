@@ -117,82 +117,6 @@ def fetch_applications():
     # Render the HTML page and pass data to the template
     return render_template('applicationrecieved.html', applications=data)
 
-# @app.route('/appupdate')
-# def appupdate():
-#     username = 'raj'
-#     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
-    
-#     # API endpoint
-#     api_url = f'{API_URL}/ShowApplications'
-    
-#     # Make a GET request to the API with the Authorization header
-#     headers = {
-#         'Authorization': f'Basic {auth_base64}'
-#     }
-    
-#     response = requests.get(api_url, headers=headers)
-    
-#     if response.status_code == 200:
-#         data = response.json()
-#     else:
-#         data = []
-    
-#     # Render the HTML page and pass data to the template
-#     return render_template('updateapplication.html', applications=data)
-
-# @app.route('/appupdate', methods=['GET', 'POST'])
-# def appupdate():
-#     username = 'raj'  # This should be dynamically set based on the logged-in user
-#     auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
-    
-#     # API endpoint for getting applications
-#     api_url = f'{API_URL}/ShowApplications'
-    
-#     # Make a GET request to the API with the Authorization header
-#     headers = {
-#         'Authorization': f'Basic {auth_base64}'
-#     }
-    
-#     response = requests.get(api_url, headers=headers)
-    
-#     if response.status_code == 200:
-#         applications = response.json()
-#     else:
-#         return render_template('index.html', popup_message="Session Expired.")
-    
-#     # Handle the POST request to update application status
-#     if request.method == 'POST':
-#         # Retrieve the jobid, username, and status from the form
-#         jobid = request.form['jobid']
-#         username = request.form['username']
-#         email = request.form['email']  # Get the email from the hidden input field
-#         process = request.form[f'process_{jobid}'] 
-#         # Construct the request body for updating the application status
-#         update_url = f'{API_URL}/UpdateApplication'
-#         request_body = {
-#             'jobid': jobid,
-#             'username': username,
-#             'email': email,  # Add email to the request body
-#             'process': process 
-#         }
-        
-#         # Send the POST request to update the application
-#         response = requests.post(update_url, json=request_body, headers=headers)
-        
-#         if response.status_code == 200:
-#             message = response.json().get('message', 'Unknown error')
-#             if message == "Application Updated!":
-#                 return render_template('updateapplication.html', popup_message="Application updated!")
-
-#             else:
-#                 return render_template('updateapplication.html', popup_message="Failed to update the Application.")
-
-#         else:
-#             return render_template('updateapplication.html', popup_message="Failed to update the Application.")
-    
-#     # Render the HTML page and pass data to the template
-#     return render_template('updateapplication.html', applications=applications)
-
 @app.route('/appupdate', methods=['GET', 'POST'])
 def appupdate():
     session_check = CheckSession(session_username, user_sessions)
@@ -298,11 +222,11 @@ def userjobs():
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
         response.raise_for_status()  # Raise an exception for HTTP errors
         api_data = response.json()
-
+        job_data = []
         # Process and prepare job data for rendering
-        job_data = [
-            {
-                "jobid": job[0],
+        for job in api_data:  # Skip the first and last elements directly
+            job_entry = {
+                "job_id": job[0],
                 "created_date": job[1],
                 "last_date": job[2],
                 "title": job[4],
@@ -311,11 +235,9 @@ def userjobs():
                 "who_can_apply": job[5],
                 "required_skills": job[7],
             }
-            for index, job in enumerate(api_data) if index != 0 and index != len(api_data) - 1
-        ]
-    except requests.RequestException as e:
+            job_data.append(job_entry)
+    except:
         # Log error and provide fallback data or error message
-        print(f"Error fetching data from API: {e}")
         job_data = []
 
     return render_template('userjobs.html', jobs=job_data)
@@ -336,9 +258,11 @@ def showjobs():
         response.raise_for_status()  # Raise an exception for HTTP errors
         api_data = response.json()
 
+        job_data = []
         # Process and prepare job data for rendering
-        job_data = [
-            {
+        for job in api_data:  # Skip the first and last elements directly
+            job_entry = {
+                "job_id": job[0],
                 "created_date": job[1],
                 "last_date": job[2],
                 "title": job[4],
@@ -347,9 +271,8 @@ def showjobs():
                 "who_can_apply": job[5],
                 "required_skills": job[7],
             }
-            for index, job in enumerate(api_data) if index != 0 and index != len(api_data) - 1
-        ]
-    except requests.RequestException as e:
+            job_data.append(job_entry)
+    except:
         # Log error and provide fallback data or error message
         print(f"Error fetching data from API: {e}")
         job_data = []
