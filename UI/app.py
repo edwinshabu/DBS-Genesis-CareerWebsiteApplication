@@ -1,8 +1,28 @@
 import base64
+from datetime import datetime, timedelta  
 import requests
 from flask import Flask, redirect, request, render_template, url_for
 
 app = Flask(__name__)
+
+app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
+app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions on the filesystem
+session = requests.Session()
+user_sessions = {}
+SESSION_TIMEOUT = 3000
+
+def CheckSession(username, user_sessions):
+    session_id = f"session_{username}"
+    if session_id not in user_sessions:
+        return False  # No session found
+    
+    session = user_sessions[session_id]
+    if datetime.now() > session["expiry_time"]:
+        del user_sessions[session_id]  # Clean up expired session
+        return False
+    
+    # Return the password if the session is valid
+    return True
 
 
 
@@ -14,16 +34,23 @@ def index():
 
 @app.route('/employer-dash')
 def empdash():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
+
     return render_template('employer-dash.html', popup_message=None)
 
 @app.route('/user-dash')
 def userdash():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
     return render_template('user-dash.html', popup_message=None)
 
 @app.route('/logout')
 def Signout():
-    username = 'raj'
-    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    user = session_username
+    auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     api_url = f'{API_URL}/Signout'
     headers = {
         'Authorization': f'Basic {auth_base64}'
@@ -38,9 +65,12 @@ def Signout():
 
 @app.route('/applications')
 def fetch_applications():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
     # Replace 'your-username' and 'your-password' with actual credentials
-    username = 'raj'
-    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    user = session_username
+    auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     
     # API endpoint
     api_url = f'{API_URL}/ShowApplications'
@@ -138,8 +168,11 @@ def fetch_applications():
 
 @app.route('/appupdate', methods=['GET', 'POST'])
 def appupdate():
-    username = 'raj'  # This should be dynamically set based on the logged-in user
-    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
+    user = session_username  # This should be dynamically set based on the logged-in user
+    auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     
     # API endpoint for getting applications
     api_url = f'{API_URL}/ShowApplications'
@@ -188,14 +221,17 @@ def appupdate():
 
 @app.route('/apply-job', methods=['POST'])
 def apply_job():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
     job_id = request.form.get("jobid")
     if not job_id:
         popup_message = "Job Id is required."
         return render_template('userjobs.html', popup_message=popup_message)
 
     api_url = f"{API_URL}/ApplyApplication"
-    username = 'raj'  # Change based on user context
-    auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+    user = session_username # Change based on user context
+    auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
 
     headers = {
         "Authorization": f"Basic {auth_base64}",
@@ -222,13 +258,16 @@ def apply_job():
 
 @app.route('/userjobs')
 def userjobs():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
     # Replace with the actual API endpoint
     api_url = f"{API_URL}/ShowJobs"
     
     try:
-        username = 'raj'
+        user = session_username
         # Make a GET request to fetch data from the API
-        auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+        auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
         response.raise_for_status()  # Raise an exception for HTTP errors
         api_data = response.json()
@@ -256,13 +295,16 @@ def userjobs():
 
 @app.route('/showjobs')
 def showjobs():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
     # Replace with the actual API endpoint
     api_url = f"{API_URL}/ShowJobs"
     
     try:
-        username = 'raj'
+        user = session_username
         # Make a GET request to fetch data from the API
-        auth_base64 = base64.b64encode(username.encode('utf-8')).decode('utf-8')
+        auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
         response.raise_for_status()  # Raise an exception for HTTP errors
         api_data = response.json()
@@ -319,6 +361,8 @@ def submit():
     try:
         username = request.form.get('username')
         password = request.form.get('password')
+        global session_username
+        session_username = username
 
         if not username or not password:
             return render_template('index.html', popup_message="Username and password are required.")
@@ -334,6 +378,13 @@ def submit():
         if response.status_code == 200:
             api_response = response.json()
             if api_response.get("message") == 'Login successful':
+                session_id = f"session_{username}"
+                user_sessions[session_id] = {
+                    "username": username,
+                    "password" : password,
+                    "start_time": datetime.now(),
+                    "expiry_time": datetime.now() + timedelta(minutes=SESSION_TIMEOUT)
+                }
                 if api_response.get("UserType") == "Employer":
                     user_data = api_response  # Store user data (if needed) in session or a context variable
                     return render_template('employer-dash.html', user=user_data)
@@ -440,10 +491,16 @@ def submitregister():
     
 @app.route('/createjob')
 def createjob():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
     return render_template('createjob.html')
 
 @app.route('/create_job', methods=['POST'])
 def create_job():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
     title = request.form.get('title')
     description = request.form.get('description')
     skills = request.form.get('skills')
@@ -451,8 +508,8 @@ def create_job():
     apply_url = request.form.get('apply-url')
     last_date = request.form.get('last-date')
 
-    username = 'raj'  # Replace with actual username
-    encoded_username = base64.b64encode(username.encode('utf-8')).decode('utf-8')  # Base64 encoding
+    user = session_username  # Replace with actual username
+    encoded_username = base64.b64encode(user.encode('utf-8')).decode('utf-8')  # Base64 encoding
 
     # Prepare the request body
     data = {
