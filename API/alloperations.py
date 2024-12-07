@@ -397,7 +397,23 @@ class Employer:
                     id = AllOperations.CheckUserTypeId(username)
                     if type == None:
                         return jsonify({"error": "An unknown error occured. Please contact Admin."}), 500
-                    q = "SELECT * FROM Applications WHERE UserId = %s"
+                    q = """
+SELECT 
+    a.Id,
+    a.AppliedOn,
+    jp.Description AS JobDescription,
+    jp.Title AS JobTitle,
+    u.Username,
+    u.Email,
+    u.Contact,
+    a.ProcessStep
+FROM 
+    (SELECT * FROM Applications WHERE UserId = %s) AS a
+JOIN 
+    JobPosting jp ON a.JobId = jp.Id
+JOIN 
+    Users u ON a.UserId = u.Id;
+"""
                     cursor.execute(q, (id,))
                     rows = cursor.fetchall()
                     if not rows:  # If the list is empty, return an empty JSON array

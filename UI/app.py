@@ -63,6 +63,33 @@ def Signout():
 
     return render_template('index.html', applications=data)
 
+@app.route('/userappupdate')
+def userappupdate():
+    session_check = CheckSession(session_username, user_sessions)
+    if not session_check:
+        return render_template('index.html')
+    # Replace 'your-username' and 'your-password' with actual credentials
+    user = session_username
+    auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
+    
+    # API endpoint
+    api_url = f'{API_URL}/ShowSpecificApplications'
+    
+    # Make a GET request to the API with the Authorization header
+    headers = {
+        'Authorization': f'Basic {auth_base64}'
+    }
+    
+    response = requests.get(api_url, headers=headers)
+    
+    if response.status_code == 200:
+        data = response.json()
+    else:
+        data = []
+    
+    # Render the HTML page and pass data to the template
+    return render_template('userapplicationupdate.html', applications=data)
+
 @app.route('/applications')
 def fetch_applications():
     session_check = CheckSession(session_username, user_sessions)
