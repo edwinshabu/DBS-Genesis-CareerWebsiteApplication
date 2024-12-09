@@ -17,21 +17,20 @@ class AllOperations:
     def CheckSession(username, user_sessions):
         session_id = f"session_{username}"
         if session_id not in user_sessions:
-            return None  # No session found
+            return None 
         
         session = user_sessions[session_id]
         if datetime.now() > session["expiry_time"]:
-            del user_sessions[session_id]  # Clean up expired session
+            del user_sessions[session_id] 
             return None
         
-        # Return the password if the session is valid
         return session.get("password")
   
 
     def SendEmail(to_email, message):
-        smtp_server = 'smtp.gmail.com'  # Replace with your SMTP server
+        smtp_server = 'smtp.gmail.com'  
         smtp_port = 587
-        smtp_user = 'genesiscareer353@gmail.com'  # Replace with your email
+        smtp_user = 'genesiscareer353@gmail.com' 
         smtp_password = 'vdfi ydtp egfg lrpz'
 
         msg = MIMEMultipart()
@@ -62,7 +61,6 @@ class AllOperations:
     """)
             emails = cursor.fetchall()
             email_list = [row[0] for row in emails]
-            # Return list of emails
             return email_list, 200
         except:
             return "Email Service Error.", 500
@@ -104,7 +102,6 @@ class AllOperations:
                 cursor.execute(query)
                 result = cursor.fetchall()
                 
-                # Extract only the 'Type' values into a list
                 types = [row['Type'] for row in result]
                 
                 cursor.close()
@@ -174,21 +171,16 @@ Genesis Career
 
     def ListAllUsers():
         try:
-            # Establish the connection
             connection = Connection.get_db_connection('root', 'Root@123')
 
             if connection.is_connected():
-                # Create a cursor to execute the query
                 cursor = connection.cursor()
 
-                # Query to retrieve unique usernames from the `mysql.user` table
                 query = "SELECT DISTINCT User FROM mysql.user;"
                 cursor.execute(query)
 
-                # Fetch all usernames
                 usernames = [row[0] for row in cursor.fetchall()]
 
-                # Close the cursor and connection
                 cursor.close()
                 connection.close()
 
@@ -200,39 +192,31 @@ Genesis Career
     
     def DeleteUser(username):
         try:
-            # Establish the connection to the application database
             connection = Connection.get_db_connection('root', 'Root@123')
 
             if connection.is_connected():
                 cursor = connection.cursor()
 
-                # Drop the user from the MariaDB server
                 cursor.execute("DROP USER IF EXISTS %s;", (username,))
                 connection.commit()
 
-                # Create a cursor to execute the query
 
-                # Query to check if the user exists in the application database (Users table)
                 cursor.execute("SELECT Id FROM Users WHERE Username = %s;", (username,))
                 user_data = cursor.fetchone()
 
                 if user_data:
                     user_id = user_data[0]
 
-                    # Delete dependent entries from JobPosting table
                     cursor.execute("DELETE FROM JobPosting WHERE UserId = %s;", (user_id,))
                     
-                    # Delete dependent entries from Applications table
                     cursor.execute("DELETE FROM Applications WHERE UserId = %s;", (user_id,))
 
-                    # Now delete the user from the Users table
                     cursor.execute("DELETE FROM Users WHERE Id = %s;", (user_id,))
                     connection.commit()
 
                     cursor.close()
                     connection.close()
 
-                    # Establish a connection to the MariaDB server for dropping the user
 
             else:
                 return f"Connection to Database Failed! Due to some reason."
@@ -244,64 +228,57 @@ Genesis Career
             return f"Error occurred: {e}"
     
     def CheckUserType(username):
-        # Establish database connection
         connection, status = Connection.get_db_connection('root', 'Root@123')
         if status != 200:
             return "Error occured during Database connection.", 500
         cursor = connection.cursor()
 
         try:
-            # Query to get the UserTypeId based on the Username
             typeId_query = "SELECT UserTypeId FROM Users WHERE Username = %s;"
             cursor.execute(typeId_query, (username,))
             usertype_id = cursor.fetchone()
 
             if usertype_id:
-                # Query to get the Type based on the UserTypeId
                 type_query = "SELECT Type FROM UserType WHERE Id = %s;"
-                cursor.execute(type_query, (usertype_id[0],))  # usertype_id[0] contains the Id
+                cursor.execute(type_query, (usertype_id[0],)) 
                 user_type = cursor.fetchone()
 
                 if user_type:
-                    return user_type[0], 200  # Returning the Type
+                    return user_type[0], 200 
                 else:
-                    return "Unable to find UserTypeId for UserType. Please contact Admin.", 500  # Type not found for the UserTypeId
+                    return "Unable to find UserTypeId for UserType. Please contact Admin.", 500  
             else:
-                return "UserType not found in Database. Contact Admin.", 404  # User not found
+                return "UserType not found in Database. Contact Admin.", 404 
 
         except:
             return "Unable to check the usertype Id from Database.", 500
 
         finally:
-            # Close the cursor and connection
             cursor.close()
             connection.close()
 
 
 
     def CheckUserTypeId(username):
-        # Establish database connection
         connection, status = Connection.get_db_connection('root', 'Root@123')
         if status != 200:
             return "Critical error while connecting to the database. Contact Admin", status
         cursor = connection.cursor()
 
         try:
-            # Query to get the UserTypeId based on the Username
             typeId_query = "SELECT Id FROM Users WHERE Username = %s;"
             cursor.execute(typeId_query, (username,))
             user_id = cursor.fetchone()
 
             if user_id:
-                return user_id[0], 200  # Type not found for the UserTypeId
+                return user_id[0], 200  
             else:
-                return "User Type ID not found. Contact Admin", 500  # User not found
+                return "User Type ID not found. Contact Admin", 500  
 
         except:
             return "Critical error while connecting to Database. Contact Admin.", 500
 
         finally:
-            # Close the cursor and connection
             cursor.close()
             connection.close()
 
@@ -344,7 +321,7 @@ class Employer:
         try:
             required_fields = ["LastDate", "UrlToApply", "Title", "WhoCanApply", "Description", "RequiredSkillSet"]
             for field in required_fields:
-                if not data.get(field):  # If any field is missing or empty
+                if not data.get(field): 
                     return f"'{field}' is required", 400
             last_date = data.get("LastDate")
             url = data.get("UrlToApply")
@@ -410,7 +387,6 @@ class Employer:
 
     def ShowSpecificApplications(username, password):
         try:
-                # Establish DB connection
                 connection, status = Connection.get_db_connection(username, password)
                 if status != 200:
                     return connection, status
@@ -439,7 +415,7 @@ JOIN
 """
                     cursor.execute(q, (id,))
                     rows = cursor.fetchall()
-                    if not rows:  # If the list is empty, return an empty JSON array
+                    if not rows: 
                         return "You have not applied for any Job.", 404
                     return rows, 200
 
@@ -474,7 +450,7 @@ JOIN
     Users ON Applications.UserId = Users.Id
 """)
                 rows = cursor.fetchall()
-                if not rows:  # If the list is empty, return an empty JSON array
+                if not rows: 
                     return "No applications", 404
                 return rows, 200
             else:
@@ -487,7 +463,6 @@ JOIN
         
     def ShowJobs(username, password):
         try:
-                # Establish DB connection
                 connection, status = Connection.get_db_connection(username, password)
                 if status != 200:
                     return connection, status
@@ -496,7 +471,7 @@ JOIN
                     cursor = connection.cursor()
                     cursor.execute("SELECT * FROM JobPosting;")
                     rows = cursor.fetchall()
-                    if not rows:  # If the list is empty, return an empty JSON array
+                    if not rows:
                         return "No Jobs Available right now.", 200
                     return rows, 200
 

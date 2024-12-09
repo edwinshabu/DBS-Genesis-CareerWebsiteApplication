@@ -1,11 +1,3 @@
--- Start Server : sudo mysqld_safe
--- Login to MariaDB Server : sudo mariadb
--- Use Database: use mysql
--- ALTER USER 'root'@'localhost' IDENTIFIED BY 'Root@123';
--- FLUSH PRIVILEGES;
--- Pre-requisite
-
-
 CREATE SCHEMA GenesisCareer;
 USE GenesisCareer;
 
@@ -106,7 +98,3 @@ CREATE TABLE Applications (
     UserId VARCHAR(50) NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id),
     ProcessStep ENUM('Applied', 'Reviewed', 'Interview', 'Offered', 'Rejected') NOT NULL
 );
-
-SELECT * 
-FROM Users 
-WHERE UserTypeId IN (SELECT Id FROM UserType WHERE Type != 'Employer');

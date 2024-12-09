@@ -15,11 +15,10 @@ class Validation:
         return re.match(email_regex, email) is not None
 
     def validate_contact(contact):
-        contact_regex = r'^[0-9]{10}$'  # Assuming 10 digit contact numbers
+        contact_regex = r'^[0-9]{10}$'
         return re.match(contact_regex, contact) is not None
 
     def validate_password(password):
-        # Must have at least one uppercase, one lowercase, one number, and be at least 8 characters long
         password_regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$'
         return re.match(password_regex, password) is not None
 
@@ -63,7 +62,6 @@ class Operations:
         cursor = connection.cursor(dictionary=True)
         
         try:
-            # Query to check if the username and password exist in the user table
             query = "SELECT * FROM Users WHERE Username = %s"
             cursor.execute(query, (username,))
             
@@ -85,42 +83,6 @@ class Operations:
             connection.close() 
             return jsonify({'message': "Login Service Failed!. Please contact Administrator."}), 500
 
-    # def Login(data):
-    #     username = data.get('username')
-    #     password = data.get('password')
-    #     if not username or not password:
-    #         return jsonify({'message': 'Username and password are required'}), 400
-
-    #     connection = Connection.get_db_connection(username,password)
-    #     if connection == 500:
-    #         return jsonify({'message': 'Either User is not registered or Credentials are incorrect.'}), 500
-    #     # return jsonify({'message': 'Login Success'}), 200
-        
-    #     cursor = connection.cursor(dictionary=True)
-        
-    #     try:
-    #         # Query to check if the username and password exist in the user table
-    #         query = "SELECT * FROM Users WHERE Username = %s"
-    #         cursor.execute(query, (username,))
-            
-    #         result = cursor.fetchone()
-    #         if result:
-    #             # Convert binary data to Base64 string for ProfilePic and Resume if they exist
-    #             if result.get('ProfilePic'):
-    #                 result['ProfilePic'] = base64.b64encode(result['ProfilePic']).decode('utf-8')
-    #             if result.get('Resume'):
-    #                 result['Resume'] = base64.b64encode(result['Resume']).decode('utf-8')
-    #             cursor.close()
-    #             connection.close() 
-    #             return jsonify({'message': 'Login successful', 'user': result}), 200
-    #         else:
-    #             cursor.close()
-    #             connection.close() 
-    #             return jsonify({'message': 'User is not registered.'}), 404
-    #     except Error as e:
-    #         cursor.close()
-    #         connection.close() 
-    #         return jsonify({'message': f"Error: {e}"}), 500
 
     def Check_User(username):
         try:
@@ -139,28 +101,23 @@ class Operations:
     
     def RollbackUser(username):
         try:
-            # Connect to the database
             conn, status = Connection.get_db_connection('root', 'Root@123')
             if status != 200:
                 return jsonify({"message": f'{conn}'}), status
             cursor = conn.cursor()
 
-            # Revoke all privileges and drop the user
             cursor.execute(f"REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{username}'@'%';")
             cursor.execute(f"DROP USER IF EXISTS '{username}'@'%';")
             
-            # Apply changes
             cursor.execute("FLUSH PRIVILEGES;")
             conn.commit()
 
             return {"message": f"User '{username}' has been rolled back successfully."}, 200
 
         except Exception as e:
-            # Handle errors during rollback
             return {"message": f"Failed to rollback user '{username}': {str(e)}"}, 500
 
         finally:
-            # Ensure the connection is closed
             if 'conn' in locals():
                 cursor.close()
                 conn.close()
@@ -177,10 +134,8 @@ class Operations:
             cursor = conn.cursor()
             cursor.execute(f"CREATE USER '{username}'@'%' IDENTIFIED BY '{password}';")
         
-            # Grant CRUD permissions
             cursor.execute(f"GRANT SELECT, INSERT, UPDATE, DELETE ON {'GenesisCareer'}.* TO '{username}'@'%';")
             
-            # Apply changes
             cursor.execute("FLUSH PRIVILEGES;")
             conn.commit()
             
@@ -192,8 +147,7 @@ class Operations:
         
     def Session(username):
         try: 
-            # Store user info in the session
-            session['username'] = username  # Store recipient ID
+            session['username'] = username 
             return session
         except Exception as e:
             return None
@@ -218,7 +172,6 @@ class Operations:
             resume_blob = resume.read()
         elif not resume:
             return jsonify({"message":"Resume is needed."}),404
-        # Establish database connection
         auth_header = request.headers.get('Authorization')
         if auth_header and auth_header.startswith("Basic "):
             base64_credentials = auth_header.split(" ")[1]
@@ -236,14 +189,12 @@ class Operations:
         skill_set = data.get('SkillSet')
         org = data.get('Organization')
         
-               # Validation
         if not Validation.validate_email(email):
             return jsonify({"message": "Invalid email format"}), 400
         if not Validation.validate_contact(contact):
             return jsonify({"message": "Invalid contact number"}), 400
         if not Validation.validate_password(password):
             return jsonify({"message": "Invalid Password"}), 400
-        # Extracting files (profile picture and resume)
         
         result, status_code = Operations.Create_NewUser(username, password)
         if status_code != 200:
@@ -258,19 +209,16 @@ class Operations:
      
 
 
-            # Get the UserTypeId from UserType table
             user_type_id, stat = DBOperations.GetUserType(username, password, user_type)
             if stat != 200:
                 Operations.RollbackUser(username)
                 return jsonify({"message": user_type_id}), stat
 
-            # Convert profile picture and resume to binary (BLOB)
             
 
             cursor.execute(f"SELECT Id FROM Organization WHERE Name = '{org}';")
             org_id_data = cursor.fetchone()
             org_id = org_id_data[0]
-            # Insert user data into Users table
             cursor.execute(""" 
                 INSERT INTO Users (FirstName, LastName, Email, Username, Password, Contact, ProfilePic, Resume, Skills, UserTypeId, OrganizationId)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)

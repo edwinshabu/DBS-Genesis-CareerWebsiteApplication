@@ -9,8 +9,8 @@ from alloperations import AllOperations, Employer
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
-app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions on the filesystem
+app.config['SECRET_KEY'] = 'genesiscareer'  
+app.config['SESSION_TYPE'] = 'filesystem' 
 session = Session()
 user_sessions = {}
 SESSION_TIMEOUT = 3000
@@ -106,7 +106,6 @@ def Delete_user():
 
             username = data['username']
 
-            # Call the function to delete the user
             result = AllOperations.DeleteUser(username)
 
             if "deleted successfully" in result:
@@ -149,8 +148,8 @@ def CreateJob():
         if check:
             auth, s = Operations.Authentication(username, password)
             if s == 200:
-                data = request.get_json()  # Get the data from the request body
-                result, status = Employer.CreateJob(data, username, password)  # Call the CreateJob method from Employer
+                data = request.get_json() 
+                result, status = Employer.CreateJob(data, username, password) 
                 return jsonify({"message" : f'{result}'}), status
             else:
                 return jsonify({"message": f"{auth}"}), s
@@ -250,7 +249,7 @@ def ShowSpecificApplications():
     if password:
         auth, status = Operations.Authentication(username, password)
         if status == 200:
-            result, s = Employer.ShowSpecificApplications(username, password)  # Call the CreateJob method from Employer
+            result, s = Employer.ShowSpecificApplications(username, password)  
             
             return result, s
         else:
@@ -270,7 +269,7 @@ def ShowJobs():
     if password:
         auth, status = Operations.Authentication(username, password)
         if status == 200:
-            result = Employer.ShowJobs(username, password)  # Call the CreateJob method from Employer
+            result = Employer.ShowJobs(username, password) 
             return result
 
         else:
@@ -294,4 +293,5 @@ def ListUserTypes():
 
     
 if __name__ == '__main__':
-    app.run(debug=True, port=8081)
+    app.run(host='0.0.0.0', port=8081, debug=True)
+

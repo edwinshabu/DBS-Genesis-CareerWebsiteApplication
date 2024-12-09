@@ -1,12 +1,12 @@
 import base64
 from datetime import datetime, timedelta  
 import requests
-from flask import Flask, redirect, request, render_template, url_for
+from flask import Flask, redirect, request, render_template
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
-app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions on the filesystem
+app.config['SECRET_KEY'] = 'genesiscareer'  
+app.config['SESSION_TYPE'] = 'filesystem'
 session = requests.Session()
 user_sessions = {}
 SESSION_TIMEOUT = 3000
@@ -14,19 +14,16 @@ SESSION_TIMEOUT = 3000
 def CheckSession(username, user_sessions):
     session_id = f"session_{username}"
     if session_id not in user_sessions:
-        return False  # No session found
+        return False
     
     session = user_sessions[session_id]
     if datetime.now() > session["expiry_time"]:
-        del user_sessions[session_id]  # Clean up expired session
-        return False
-    
-    # Return the password if the session is valid
+        del user_sessions[session_id]
+        return False    
     return True
 
 
-
-API_URL = "http://127.0.0.1:8081/"  # Replace with your actual API URL
+API_URL = "http://127.0.0.1:8081/"
 
 @app.route('/')
 def index():
@@ -81,14 +78,11 @@ def userappupdate():
             return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     except:
         return render_template('index.html', popup_message = "Session Timeout! Please Login.")
-    # Replace 'your-username' and 'your-password' with actual credentials
     user = session_username
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     
-    # API endpoint
     api_url = f'{API_URL}/ShowSpecificApplications'
     
-    # Make a GET request to the API with the Authorization header
     headers = {
         'Authorization': f'Basic {auth_base64}'
     }
@@ -105,7 +99,6 @@ def userappupdate():
         pass
 
     
-    # Render the HTML page and pass data to the template
     return render_template('userapplicationupdate.html', applications=data)
 
 @app.route('/applications')
@@ -116,14 +109,11 @@ def fetch_applications():
             return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     except:
         return render_template('index.html', popup_message = "Session Timeout! Please Login.")
-    # Replace 'your-username' and 'your-password' with actual credentials
     user = session_username
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     
-    # API endpoint
     api_url = f'{API_URL}/ShowApplications'
     
-    # Make a GET request to the API with the Authorization header
     headers = {
         'Authorization': f'Basic {auth_base64}'
     }
@@ -152,13 +142,11 @@ def appupdate():
             return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     except:
         return render_template('index.html', popup_message = "Session Timeout! Please Login.")
-    user = session_username  # This should be dynamically set based on the logged-in user
+    user = session_username 
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     
-    # API endpoint for getting applications
     api_url = f'{API_URL}/ShowApplications'
     
-    # Make a GET request to the API with the Authorization header
     headers = {
         'Authorization': f'Basic {auth_base64}'
     }
@@ -170,7 +158,6 @@ def appupdate():
     else:
         return render_template('index.html', popup_message="Session Expired.")
     
-    # Handle the POST request to update application status
     if request.method == 'POST':
         jobid = request.form['jobid']
         username = request.form['username']
@@ -201,7 +188,6 @@ def appupdate():
             return render_template('updateapplication.html', popup_message = output.get('message'))
 
     
-    # Render the HTML page with the latest applications data
     return render_template('updateapplication.html', applications=applications)
 
 @app.route('/apply-job', methods=['POST'])
@@ -218,7 +204,7 @@ def apply_job():
         return render_template('userjobs.html', popup_message=popup_message)
 
     api_url = f"{API_URL}/ApplyApplication"
-    user = session_username # Change based on user context
+    user = session_username 
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
 
     headers = {
@@ -252,14 +238,12 @@ def userjobs():
             return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     except:
         return render_template('index.html', popup_message = "Session Timeout! Please Login.")
-    # Replace with the actual API endpoint
     api_url = f"{API_URL}/ShowJobs"
     
     try:
         
         user = session_username
         
-        # Make a GET request to fetch data from the API
         auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
         api_data = response.json()
@@ -270,8 +254,7 @@ def userjobs():
         except:
             pass
         job_data = []
-        # Process and prepare job data for rendering
-        for job in api_data:  # Skip the first and last elements directly
+        for job in api_data: 
             job_entry = {
                 "job_id": job[0],
                 "created_date": job[1],
@@ -284,7 +267,6 @@ def userjobs():
             }
             job_data.append(job_entry)
     except :
-        # Log error and provide fallback data or error message
         job_data = []
 
     return render_template('userjobs.html', jobs=job_data)
@@ -297,15 +279,12 @@ def showjobs():
             return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     except:
         return render_template('index.html', popup_message = "Session Timeout! Please Login.")
-    # Replace with the actual API endpoint
     api_url = f"{API_URL}/ShowJobs"
     
     try:
         user = session_username
-        # Make a GET request to fetch data from the API
         auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
-        response.raise_for_status()  # Raise an exception for HTTP errors
         api_data = response.json()
         try:
             if api_data.get('message') == "Session Timeout":
@@ -314,8 +293,7 @@ def showjobs():
             pass
 
         job_data = []
-        # Process and prepare job data for rendering
-        for job in api_data:  # Skip the first and last elements directly
+        for job in api_data: 
             job_entry = {
                 "job_id": job[0],
                 "created_date": job[1],
@@ -328,8 +306,6 @@ def showjobs():
             }
             job_data.append(job_entry)
     except:
-        # Log error and provide fallback data or error message
-        print(f"Error fetching data from API: {e}")
         job_data = []
 
     return render_template('showjobs.html', jobs=job_data)
@@ -345,8 +321,8 @@ def register():
     try:
         response_org = requests.get(f'{API_URL}/ListOrganization')
         response_org.raise_for_status()
-        org_data = response_org.json()  # Get the JSON response
-        org_keys = list(org_data.keys())  # Extract only the keys
+        org_data = response_org.json()
+        org_keys = list(org_data.keys())
 
     except requests.exceptions.RequestException as e:
         print(f"Organization API error: {e}")
@@ -382,7 +358,6 @@ def submit():
         headers = {
             'Authorization': f'Basic {auth_base64}'
         }
-        # Forward the data to the external API
         response = requests.post(f'{API_URL}/Login', headers=headers)
         
         if response.status_code == 200:
@@ -396,7 +371,7 @@ def submit():
                     "expiry_time": datetime.now() + timedelta(minutes=SESSION_TIMEOUT)
                 }
                 if api_response.get("UserType") == "Employer":
-                    user_data = api_response  # Store user data (if needed) in session or a context variable
+                    user_data = api_response  
                     return render_template('employer-dash.html', user=user_data)
                 else:
                     user_data = api_response 
@@ -421,7 +396,6 @@ def submitforgot():
         if not username or not email:
             return render_template('forgot.html', popup_message="Username and Email are required.")
 
-        # Forward the data to the external API
         payload = {"username": username, "email": email}
         response = requests.post(f'{API_URL}/ForgotPassword', json=payload)
         messages = response.json()
@@ -438,7 +412,6 @@ def submitforgot():
 @app.route('/submit-register', methods=['POST'])
 def submitregister():
     try:
-        # Get data from the form
         username = request.form.get('username')
         password = request.form.get('password')
         first_name = request.form.get('first_name')
@@ -451,16 +424,13 @@ def submitregister():
         profilepic = request.files.get('profilepic')
         resume = request.files.get('resume')
 
-        # Encode the credentials for Basic Auth
         auth_string = f"{username}:{password}"
         auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
 
-        # Prepare headers with the Base64 encoded Authorization
         headers = {
             'Authorization': f'Basic {auth_base64}',
         }
 
-        # Prepare the data to send in the POST request (use form data)
         data = {
             'FirstName': first_name,
             'LastName': last_name,
@@ -471,16 +441,13 @@ def submitregister():
             'Organization': organization
         }
 
-        # Prepare the files to be sent in the POST request
         files = {
             'ProfilePicture': (profilepic.filename, profilepic.stream, profilepic.content_type),
             'Resume': (resume.filename, resume.stream, resume.content_type)
         }
 
-        # Sending the POST request to the API
         response = requests.post(f'{API_URL}/Register', headers=headers, data=data, files=files)
 
-        # Check the response status
         api_response = response.json()
         try:
             if api_response.get('message') == "Session Timeout":
@@ -490,7 +457,6 @@ def submitregister():
         return render_template('register.html', popup_message=f'{api_response.get("message")}')
 
     except Exception as e:
-        # Handle any exceptions that occur
         return render_template('register.html', popup_message=f"{e}")
     
 @app.route('/createjob')
@@ -518,10 +484,9 @@ def create_job():
     apply_url = request.form.get('apply-url')
     last_date = request.form.get('last-date')
 
-    user = session_username  # Replace with actual username
+    user = session_username  
     encoded_username = base64.b64encode(user.encode('utf-8')).decode('utf-8')  # Base64 encoding
 
-    # Prepare the request body
     data = {
         "LastDate": last_date,
         "UrlToApply": apply_url,
@@ -531,7 +496,6 @@ def create_job():
         "RequiredSkillSet": skills
     }
 
-    # Make the API request
     url = f'{API_URL}/CreateJob'
     headers = {
         'Content-Type': 'application/json',
@@ -558,4 +522,5 @@ def create_job():
 
 
 if __name__ == '__main__':
-    app.run(port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
+

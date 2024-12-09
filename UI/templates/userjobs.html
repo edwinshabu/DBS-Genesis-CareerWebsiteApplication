@@ -126,7 +126,6 @@
             background-color: #e64a19;
         }
 
-        /* Active classes for showing the popup */
         .popup-overlay.active {
             display: flex;
         }
@@ -174,7 +173,6 @@
             background-color: #45a049;
         }
 
-        /* Popup Styling */
         #popup {
             display: none;
             position: fixed;
@@ -221,7 +219,6 @@
     </header>
 
     <div class="container">
-        <!-- Show popup message if present -->
         {% if popup_message %}
         <script>
             window.onload = function() {
@@ -267,7 +264,6 @@
         </table>
     </div>
 
-    <!-- Popup Modal -->
     <div id="popup">
         <div class="popup-content">
             <p id="popup-message-text"></p>
@@ -284,7 +280,7 @@
 
         function closePopup() {
             document.getElementById("popup").style.display = "none";
-            window.location.href = "/userjobs"; // Redirect to the /userjobs page
+            window.location.href = "/userjobs";
         }
     </script>
         {% if popup_message %}
