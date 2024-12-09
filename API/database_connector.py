@@ -47,27 +47,27 @@ class Connection:
                 password= password  # Your MariaDB password
             )
             if connection.is_connected():
-                return connection
+                return connection, 200
         except Error as e:
-            return 500
+            return "Error occured while creating connection to Database. Contact Administrator.", 500
         
 
 class DBOperations:    
     def GetUserType(username, password, user_type):
         try:
             # Connect to the database and fetch the UserTypeId based on user_type
-            conn = Connection.get_db_connection(username, password)
-            if conn == 500:
-                return 500
+            conn, status = Connection.get_db_connection(username, password)
+            if status != 200:
+                return conn, status
             cursor = conn.cursor()
             cursor.execute("SELECT Id FROM UserType WHERE Type = %s", (user_type,))
             user_type_id = cursor.fetchone()
             conn.close()
             if user_type_id:
-                return user_type_id[0]
+                return user_type_id[0], 200
             else:
-                return 500
+                return "UserType not found. Contact Admin", 500
         except Exception as ex:
             print(ex)
-            return 500
+            return "Unable to retrieve USerType from database. Contact Administrator.", 500
 

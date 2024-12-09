@@ -27,7 +27,9 @@ class Operations:
 
     def Authentication(username, password):
         try:
-            conn = Connection.get_db_connection('root', 'Root@123')
+            conn, status = Connection.get_db_connection('root', 'Root@123')
+            if status != 200:
+                return "Error Occured during the Connection of Database. Contact Admin", 500
             cursor = conn.cursor(dictionary=True)
             query = """
             SELECT 1
@@ -36,14 +38,17 @@ class Operations:
             """
             cursor.execute(query, (username, password))
             result = cursor.fetchone()
-            return result is not None
+            if not result:
+                return "User is not registered!", 404
+            else:
+                return result, 200
         except Error as e:
-            print(f"Error checking user existence: {e}")
+            print(e)
+            return "Database Authentication server failed. Contact Admin", 500
         finally:
             if conn.is_connected():
                 cursor.close()
                 conn.close()
-        return False
 
 
     def Login(username, password):
@@ -52,10 +57,9 @@ class Operations:
         if not username or not password:
             return jsonify({'message': 'Username and password are required'}), 400
 
-        connection = Connection.get_db_connection(username,password)
-        if connection == 500:
-            return jsonify({'message': 'Either User is not registered or Credentials are incorrect.'}), 500
-        # return jsonify({'message': 'Login Success'}), 200
+        connection, status = Connection.get_db_connection(username,password)
+        if status != 200:
+            return jsonify({'message': 'Either User is not registered or Credentials are incorrect.'}), status
         cursor = connection.cursor(dictionary=True)
         
         try:
@@ -65,13 +69,13 @@ class Operations:
             
             result = cursor.fetchone()
             if result:
-                usertype = AllOperations.CheckUserType(username)
-                if usertype:
+                usertype, s = AllOperations.CheckUserType(username)
+                if s == 200:
                     cursor.close()
                     connection.close() 
                     return jsonify({'message': 'Login successful', 'First Name': result['FirstName'], 'Last Name' : result['LastName'], 'UserType' : usertype }), 200
                 else:
-                    return jsonify({'message' : 'User is not properly registered.'}), 401
+                    return jsonify({'message' : f"{usertype}"}), s
             else:
                 cursor.close()
                 connection.close() 
@@ -79,7 +83,7 @@ class Operations:
         except Error as e:
             cursor.close()
             connection.close() 
-            return jsonify({'message': f"Error: {e}"}), 500
+            return jsonify({'message': "Login Service Failed!. Please contact Administrator."}), 500
 
     # def Login(data):
     #     username = data.get('username')
@@ -120,19 +124,25 @@ class Operations:
 
     def Check_User(username):
         try:
-            conn = Connection.get_db_connection('root', 'Root@123')
+            conn, status = Connection.get_db_connection('root', 'Root@123')
+            if status != 200:
+                return "Unable to connect to Database to check User existence. Contact Admin.", status
             cursor = conn.cursor()
             cursor.execute(f"SELECT COUNT(*) FROM mysql.user WHERE user = '{username}';")
             result = cursor.fetchone()
-            return result[0] > 0  # Returns True if user exists
-        except Error as e:
-            print(f"Error checking user existence: {e}")
-            return False
+            if result[0] > 0:
+                return "User exists!", 400
+            else:
+                return "Not Exists!", 200
+        except:
+            return "Unable to connect to Database to check User existence. Contact Admin.", 500
     
     def RollbackUser(username):
         try:
             # Connect to the database
-            conn = Connection.get_db_connection('root', 'Root@123')
+            conn, status = Connection.get_db_connection('root', 'Root@123')
+            if status != 200:
+                return jsonify({"message": f'{conn}'}), status
             cursor = conn.cursor()
 
             # Revoke all privileges and drop the user
@@ -158,9 +168,12 @@ class Operations:
     
     def Create_NewUser(username, password):
         try:
-            if Operations.Check_User(username):
-                return {"message": f"User '{username}' already exists."}, 409
-            conn = Connection.get_db_connection('root', 'Root@123')
+            checking, stats = Operations.Check_User(username)
+            if stats != 200:
+                return checking, stats
+            conn, status = Connection.get_db_connection('root', 'Root@123')
+            if status != 200:
+                return conn, status
             cursor = conn.cursor()
             cursor.execute(f"CREATE USER '{username}'@'%' IDENTIFIED BY '{password}';")
         
@@ -172,10 +185,10 @@ class Operations:
             conn.commit()
             
             
-            return jsonify({"message": f"User '{username}' created successfully with CRUD permissions."}), 201
+            return jsonify({"message": f"User {username}registerd."}), 200
         
-        except Error as e:
-            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            return jsonify({"message":"Unable to create a new user. Please contact admin."}), 400
         
     def Session(username):
         try: 
@@ -186,6 +199,25 @@ class Operations:
             return None
         
     def Register(data):
+        required_fields = ['FirstName', 'LastName', 'EmailId', 'ContactDetails', 'UserType', 'SkillSet', 'Organization']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({"message": f"{field} is required"}), 400
+        profile_picture = request.files.get('ProfilePicture')
+        resume = request.files.get('Resume')
+            
+        profile_picture_blob = None
+        if profile_picture:
+            profile_picture_blob = profile_picture.read()
+        elif not profile_picture:
+            return jsonify({"message":"Profile Picture is needed."}),400
+    
+
+        resume_blob = None
+        if resume:
+            resume_blob = resume.read()
+        elif not resume:
+            return jsonify({"message":"Resume is needed."}),404
         # Establish database connection
         auth_header = request.headers.get('Authorization')
         if auth_header and auth_header.startswith("Basic "):
@@ -204,60 +236,36 @@ class Operations:
         skill_set = data.get('SkillSet')
         org = data.get('Organization')
         
+               # Validation
+        if not Validation.validate_email(email):
+            return jsonify({"message": "Invalid email format"}), 400
+        if not Validation.validate_contact(contact):
+            return jsonify({"message": "Invalid contact number"}), 400
+        if not Validation.validate_password(password):
+            return jsonify({"message": "Invalid Password"}), 400
         # Extracting files (profile picture and resume)
-        profile_picture = request.files.get('ProfilePicture')
-        resume = request.files.get('Resume')
+        
         result, status_code = Operations.Create_NewUser(username, password)
+        if status_code != 200:
+            return jsonify({"message": result}), status_code
         
-        if status_code == 409:  # User already exists
-            return jsonify({"message": result["message"]}), status_code
-        elif status_code != 201:  # Error occurred
-            return jsonify({"message": result["message"]}), status_code
-        else:
-            jsonify({"message": "Unknow error occured, Please contact Administrator."}), 500
-        
-        conn = Connection.get_db_connection(username, password)
-        if conn == 500:
+        conn, status = Connection.get_db_connection(username, password)
+        if status != 200:
             Operations.RollbackUser(username)
-            return jsonify({"message":"Error occured during Database Connection. Contact Administrator."}),500
+            return jsonify({"message":f"{conn}"}), status
         cursor = conn.cursor()
         try:    
-            # Validation
-            if not Validation.validate_email(email):
-                Operations.RollbackUser(username)
-                return jsonify({"message": "Invalid email format"}), 400
-            if not Validation.validate_contact(contact):
-                Operations.RollbackUser(username)
-                return jsonify({"message": "Invalid contact number"}), 400
-            if not Validation.validate_password(password):
-                Operations.RollbackUser(username)
-                return jsonify({"message": "Invalid Password"}), 400
+     
 
 
             # Get the UserTypeId from UserType table
-            user_type_id = DBOperations.GetUserType(username, password, user_type)
-            if user_type_id == 500:
+            user_type_id, stat = DBOperations.GetUserType(username, password, user_type)
+            if stat != 200:
                 Operations.RollbackUser(username)
-                return jsonify({"message": "Unknown error occured during Database Connection, please contact Administrator."}), 500
-            if not user_type_id:
-                Operations.RollbackUser(username)
-                return jsonify({"message": "Invalid UserType"}), 400
+                return jsonify({"message": user_type_id}), stat
 
             # Convert profile picture and resume to binary (BLOB)
-            profile_picture_blob = None
-            if profile_picture:
-                profile_picture_blob = profile_picture.read()
-            elif not profile_picture:
-                Operations.RollbackUser(username)
-                return jsonify({"message":"Profile Picture is needed."}),404
-        
-
-            resume_blob = None
-            if resume:
-                resume_blob = resume.read()
-            elif not resume:
-                Operations.RollbackUser(username)
-                return jsonify({"message":"Resume is needed."}),404
+            
 
             cursor.execute(f"SELECT Id FROM Organization WHERE Name = '{org}';")
             org_id_data = cursor.fetchone()
@@ -269,24 +277,26 @@ class Operations:
             """, (first_name, last_name, email, username, password, contact, profile_picture_blob, resume_blob, skill_set, user_type_id, org_id))
 
             conn.commit()
-            return jsonify({"message": "Registration successful"}), 201
+            return jsonify({"message": "Registration successful"}), 200
         except mysql.connector.Error as err:
                 conn.rollback()
                 Operations.RollbackUser(username)
-                return jsonify({"Registration Error": f"{err.msg}"}), 500
+                return jsonify({"message": err.msg}), 500
         finally:
             cursor.close()
             conn.close()
 
     def ForgotPassword(username, emailId):
         try:
-            connection = Connection.get_db_connection('root', 'Root@123')
+            connection, status = Connection.get_db_connection('root', 'Root@123')
+            if status != 200:
+                return connection, status
             cursor = connection.cursor()
             query = "SELECT password FROM Users WHERE username = %s AND email = %s"
             cursor.execute(query, (username, emailId))
             result = cursor.fetchone()
             if result == None:
-                return jsonify({"message" : "Username or Email is not registered."}), 404
+                return "Username or Email is not registered.", 400
             if result:
                 password = result[0]
                 message = f"""
@@ -299,8 +309,8 @@ class Operations:
     Regards,
     """
                 if  AllOperations.SendEmail(emailId, message):
-                    return jsonify({"message": "Password sent to email successfully"}), 200
+                    return "Password sent to email successfully", 200
 
             
         except Exception as ex:
-            return jsonify({"error": f"An error occurred: {str(ex)}"}), 500
+            return f"An error occurred: {str(ex)}", 500

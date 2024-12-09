@@ -34,21 +34,33 @@ def index():
 
 @app.route('/employer-dash')
 def empdash():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
 
     return render_template('employer-dash.html', popup_message=None)
 
 @app.route('/user-dash')
 def userdash():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     return render_template('user-dash.html', popup_message=None)
 
 @app.route('/logout')
 def Signout():
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     user = session_username
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     api_url = f'{API_URL}/Signout'
@@ -57,17 +69,18 @@ def Signout():
     }
     response = requests.get(api_url, headers=headers)
     if response.status_code == 200:
-        data = response.json()
-    else:
-        data = []
+        return render_template('index.html', popup_message = "Logged Out Successfully!")
+    return render_template('index.html', popup_message = "Logged Out Successfully!")
 
-    return render_template('index.html', applications=data)
 
 @app.route('/userappupdate')
 def userappupdate():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     # Replace 'your-username' and 'your-password' with actual credentials
     user = session_username
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
@@ -81,20 +94,28 @@ def userappupdate():
     }
     
     response = requests.get(api_url, headers=headers)
+    if response.status_code == 404:
+        return render_template('userapplicationupdate.html', popup_message=f'{response.text}')
+    data = response.json()
     
-    if response.status_code == 200:
-        data = response.json()
-    else:
-        data = []
+    try:
+        if data.get('message') == "Session Timeout":
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        pass
+
     
     # Render the HTML page and pass data to the template
     return render_template('userapplicationupdate.html', applications=data)
 
 @app.route('/applications')
 def fetch_applications():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     # Replace 'your-username' and 'your-password' with actual credentials
     user = session_username
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
@@ -108,20 +129,29 @@ def fetch_applications():
     }
     
     response = requests.get(api_url, headers=headers)
-    
-    if response.status_code == 200:
-        data = response.json()
+    if response.status_code != 200:
+        resp = response.json()
+        return render_template('employer-dash.html', popup_message = resp.get('message'))
     else:
-        data = []
+        data = response.json()
+        
+        try:
+            if data.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
+        return render_template('applicationrecieved.html', applications=data)
     
-    # Render the HTML page and pass data to the template
-    return render_template('applicationrecieved.html', applications=data)
+    
 
 @app.route('/appupdate', methods=['GET', 'POST'])
 def appupdate():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     user = session_username  # This should be dynamically set based on the logged-in user
     auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
     
@@ -157,24 +187,31 @@ def appupdate():
         }
         
         response = requests.post(update_url, json=request_body, headers=headers)
+        output = response.json()
+        try:
+            if output.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
         
-        if response.status_code == 200:
-            message = response.json().get('message', 'Unknown error')
-            if message == "Application Updated!":
-                return redirect(url_for('appupdate'))  # Redirect after successful update
-            else:
-                return render_template('updateapplication.html', popup_message="Failed to update the Application.")
+        if response.status_code != 200:
+            return redirect('updateapplication.html', popup_message = output.get('message'))
+
         else:
-            return render_template('updateapplication.html', popup_message="Failed to update the Application.")
+            return render_template('updateapplication.html', popup_message = output.get('message'))
+
     
     # Render the HTML page with the latest applications data
     return render_template('updateapplication.html', applications=applications)
 
 @app.route('/apply-job', methods=['POST'])
 def apply_job():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     job_id = request.form.get("jobid")
     if not job_id:
         popup_message = "Job Id is required."
@@ -194,34 +231,44 @@ def apply_job():
         response = requests.post(api_url, headers=headers, json=payload)
 
         api_response = response.json()
+        try:
+            if api_response.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
 
-        if api_response.get('message') == 'Thanks for applying to the Job.':
-            popup_message = "Successfully applied to the job."
-        elif api_response.get('message') == "Already Applied":
-            popup_message = "You have already applied to this job."
-        else:
-            popup_message = "Unknown error. Please try again."
+        return render_template('userjobs.html', popup_message=f'{api_response.get('message')}')
         
-    except requests.exceptions.RequestException as e:
-        popup_message = "Contact Admin."
+    except Exception as ex:
+        return render_template('userjobs.html', popup_message=f'Error -> {ex}')
 
-    return render_template('userjobs.html', popup_message=popup_message)
+    
 
 @app.route('/userjobs')
 def userjobs():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     # Replace with the actual API endpoint
     api_url = f"{API_URL}/ShowJobs"
     
     try:
+        
         user = session_username
+        
         # Make a GET request to fetch data from the API
         auth_base64 = base64.b64encode(user.encode('utf-8')).decode('utf-8')
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
-        response.raise_for_status()  # Raise an exception for HTTP errors
         api_data = response.json()
+        
+        try:
+            if api_data.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
         job_data = []
         # Process and prepare job data for rendering
         for job in api_data:  # Skip the first and last elements directly
@@ -236,7 +283,7 @@ def userjobs():
                 "required_skills": job[7],
             }
             job_data.append(job_entry)
-    except:
+    except :
         # Log error and provide fallback data or error message
         job_data = []
 
@@ -244,9 +291,12 @@ def userjobs():
 
 @app.route('/showjobs')
 def showjobs():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     # Replace with the actual API endpoint
     api_url = f"{API_URL}/ShowJobs"
     
@@ -257,6 +307,11 @@ def showjobs():
         response = requests.get(api_url, headers={"Authorization": f"Basic {auth_base64}"})
         response.raise_for_status()  # Raise an exception for HTTP errors
         api_data = response.json()
+        try:
+            if api_data.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
 
         job_data = []
         # Process and prepare job data for rendering
@@ -300,6 +355,11 @@ def register():
         user_types_response = requests.get(f'{API_URL}/ShowUserType')
         user_types_response.raise_for_status()
         user_types = user_types_response.json()
+        try:
+            if user_types.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
     except requests.exceptions.RequestException as e:
         print(f"User type API error: {e}")
         return render_template('register.html', popup_message="Failed to fetch user types.", organizations=org_keys, usertype=[])
@@ -364,17 +424,14 @@ def submitforgot():
         # Forward the data to the external API
         payload = {"username": username, "email": email}
         response = requests.post(f'{API_URL}/ForgotPassword', json=payload)
-        
-        if response.status_code == 200:
-            api_response = response.json()
-            if api_response.get("message") == 'Password sent to your registered Email.':
-                return render_template('forgot.html', popup_message="Password sent to your registered Email.")
-            else:
-                return render_template('forgot.html', popup_message=api_response.get("message", "Unable to send verify the Identity. Please contact the Admin."))
-        elif response.status_code == 404:
-            return render_template('forgot.html', popup_message = "Either the Username or the Email Address is not registered.")
-        else:
-            return render_template('forgot.html', popup_message="Unexpected error occured. Please contact the Admin.")
+        messages = response.json()
+        try:
+            if messages.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
+        message = messages.get("message")
+        return render_template('forgot.html', popup_message=f"{message}")
     except Exception as e:
         return render_template('forgot.html', popup_message=f"Error: {str(e)}")
 
@@ -424,33 +481,36 @@ def submitregister():
         response = requests.post(f'{API_URL}/Register', headers=headers, data=data, files=files)
 
         # Check the response status
-        if response.status_code == 201:  # Successful registration
-            api_response = response.json()
-            if api_response.get("message") == 'Registration successful':
-                return render_template('register.html', popup_message='Registration successful')
-        else:
-            # Handle other error responses
-            api_response = response.json() if response.content else {}
-            error_message = api_response.get("message", "An error occurred during registration.")
-            return render_template('register.html', popup_message=f'Error: {error_message}')
-    
+        api_response = response.json()
+        try:
+            if api_response.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
+        return render_template('register.html', popup_message=f'{api_response.get("message")}')
+
     except Exception as e:
         # Handle any exceptions that occur
-        print(f"Exception: {e}")
-        return render_template('register.html', popup_message="An unexpected error occurred.")
+        return render_template('register.html', popup_message=f"{e}")
     
 @app.route('/createjob')
 def createjob():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     return render_template('createjob.html')
 
 @app.route('/create_job', methods=['POST'])
 def create_job():
-    session_check = CheckSession(session_username, user_sessions)
-    if not session_check:
-        return render_template('index.html')
+    try:
+        session_check = CheckSession(session_username, user_sessions)
+        if not session_check:
+            return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+    except:
+        return render_template('index.html', popup_message = "Session Timeout! Please Login.")
     title = request.form.get('title')
     description = request.form.get('description')
     skills = request.form.get('skills')
@@ -480,16 +540,20 @@ def create_job():
 
     response = requests.post(url, json=data, headers=headers)
 
-    if response.status_code == 200 or response.status_code == 201:
+    if response.status_code != 200:
+        return render_template('/create_job', popup_message = response.text)
+
+    try:
         response_data = response.json()
-        if 'message' in response_data:
-            # Success message
-            return render_template('employer-dash.html', popup_message="Job posting created successfully.")
-    elif 'timeout' in response_data:
-            return render_template('index.html', popup_message="Session Timeout. Please Login.")
-    else:
-        # Handle failure
-        return render_template('index.html', popup_message="Unknow error occured. Please contact Administrator.")
+        try:
+            if response_data.get('message') == "Session Timeout":
+                return render_template('index.html', popup_message = "Session Timeout! Please Login.")
+        except:
+            pass
+        return render_template('/employer-dash.html', popup_message = response_data['message'])
+    except:
+        return render_template('/employer-dash.html', popup_message = "Unexpected error occured. Contact Admin")
+    
 
 
 
