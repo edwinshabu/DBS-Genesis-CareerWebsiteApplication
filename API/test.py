@@ -1,68 +1,191 @@
-import base64
-from io import BytesIO
-import os
 import unittest
-from app import app   # assuming the Flask app is in 'app.py'
-from flask import json
-from werkzeug.datastructures import FileStorage
+import base64
+import json
+from app import app
+import random
+import string
 
-API_URL = 'http://127.0.0.1:8081'
+def generate_random_email(domain="gmail.com"):
+    # Generate a random username with lowercase letters and digits
+    username_length = random.randint(5, 10)  # Username length between 5 and 10 characters
+    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
+    
+    # Combine the username with the domain
+    email = f"{username}@{domain}"
+    return email
 
-class TestRegistration(unittest.TestCase):
-    def setUp(self):
-        # Create a test client for the Flask app
-        self.client = app.test_client()
-        # Set up any necessary configuration here
-        self.app = app
+class TestRegisterAPI(unittest.TestCase):
 
-    def test_register_success(self):
-        # Sample data for registration
-        username = 'tester'
-        password = 'Password@123'
+    @classmethod
+    def setUpClass(cls):
+        cls.app = app.test_client()
+        cls.app.testing = True
+
+    def Check_If_User_Exist(self):
+        # Prepare the username and password for authorization
+        username = "andtrds"
+        password = "Admin@123456"
         auth_string = f"{username}:{password}"
         auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+
+        # Prepare headers with the Base64 encoded Authorization
         headers = {
             'Authorization': f'Basic {auth_base64}',
-            'Content-Type': 'application/json'
-        }
-        form_data = {
-            'FirstName': 'Tester',
-            'LastName': 'Testing',
-            'EmailId': '20040425@mydbs.ie',
-            'ContactDetails': '9730343371',
-            'SkillSet': 'Python,JavaScript,SQL',
-            'UserType': 'Employer',
-            'Organization': 'TechCorp'
-        }
-        
-        # Create FileStorage objects for files
-        profilepic_file = BytesIO(b"fake_image_data")
-        profilepic = FileStorage(profilepic_file, filename='pic.jpg', content_type='image/jpeg')
-
-        resume_file = BytesIO(b"fake_pdf_data")
-        resume = FileStorage(resume_file, filename='resume.pdf', content_type='application/pdf')
-
-        # Files dictionary
-        files = {
-            'ProfilePicture': profilepic,
-            'Resume': resume
         }
 
-        # Simulate a POST request to the /Register endpoint with form data and files
-        data = form_data
-        data['ProfilePicture'] = profilepic
-        data['Resume'] = resume
+        # Simulate a POST request to the /Register endpoint
+        with open('resume.pdf', 'rb') as resume, open('pic.jpg', 'rb') as pic:
+            response = self.app.post(
+                '/Register',
+                data={
+                    'FirstName': 'Tester',
+                    'LastName': 'User',
+                    'EmailId': 'ted8dsdtusdds@exadmple.com',
+                    'ContactDetails': '7742477777',
+                    'SkillSet': 'Python, Flask',
+                    'UserType': 'Employee',
+                    'Organization': 'TechCorp',
+                    'Resume': resume,
+                    'ProfilePicture': pic
+                },
+                content_type='multipart/form-data',
+                headers=headers
+            )
 
-        # Send request with multipart/form-data content type
-        response = self.client.post(f'{API_URL}/Register', 
-                                    data=data,
-                                    headers=headers)
+        # Parse the JSON response
+        response_data = json.loads(response.data.decode())
 
-        # Assert the response status code and message
-        self.assertEqual(response.status_code, 200)
-        response_json = json.loads(response.data)
-        self.assertIn('message', response_json)  # Assumes the success message is in the response
-        self.assertEqual(response_json['message'], 'User registered successfully')  # Replace with actual message
+        # Assert the response status code
+        self.assertEqual(response_data.get('message'), 'User exists!')
+
+    def Check_Missing_Fields(self):
+        length = 8
+        characters = string.ascii_lowercase + string.digits
+        random_username = ''.join(random.choice(characters) for _ in range(length))
+        random_number = random.randint(1000000000, 9999999999)
+
+        # Prepare the username and password for authorization
+        username = random_username
+        password = "Admin@123456"
+        auth_string = f"{username}:{password}"
+        auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+
+        # Prepare headers with the Base64 encoded Authorization
+        headers = {
+            'Authorization': f'Basic {auth_base64}',
+        }
+
+        # Simulate a POST request to the /Register endpoint
+        with open('resume.pdf', 'rb') as resume, open('pic.jpg', 'rb') as pic:
+            response = self.app.post(
+                '/Register',
+                data={
+                    'FirstName': 'Tester',
+                    'LastName': 'User',
+                    'EmailId': '',  # Missing EmailId
+                    'ContactDetails': f'{random_number}',
+                    'SkillSet': 'Python, Flask',
+                    'UserType': 'Employee',
+                    'Organization': 'TechCorp',
+                    'Resume': resume,
+                    'ProfilePicture': pic
+                },
+                content_type='multipart/form-data',
+                headers=headers
+            )
+
+        # Parse the JSON response
+        response_data = json.loads(response.data.decode())
+
+        # Assert the response status code
+        self.assertEqual(response.status_code, 400)  # Bad Request for missing field
+        self.assertEqual(response_data.get('message'), 'EmailId is required')
+    
+    def Registration_Successful(self):
+        length = 8
+        characters = string.ascii_lowercase + string.digits
+        random_username = ''.join(random.choice(characters) for _ in range(length))
+        random_number = random.randint(1000000000, 9999999999)
+        random_email = generate_random_email()
+
+        # Prepare the username and password for authorization
+        username = random_username
+        password = "Admin@123456"
+        auth_string = f"{username}:{password}"
+        auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+
+        # Prepare headers with the Base64 encoded Authorization
+        headers = {
+            'Authorization': f'Basic {auth_base64}',
+        }
+
+        # Simulate a POST request to the /Register endpoint
+        with open('resume.pdf', 'rb') as resume, open('pic.jpg', 'rb') as pic:
+            response = self.app.post(
+                '/Register',
+                data={
+                    'FirstName': 'Tester',
+                    'LastName': 'User',
+                    'EmailId': f'{random_email}',  
+                    'ContactDetails': f'{random_number}',
+                    'SkillSet': 'Python, Flask',
+                    'UserType': 'Employee',
+                    'Organization': 'TechCorp',
+                    'Resume': resume,
+                    'ProfilePicture': pic
+                },
+                content_type='multipart/form-data',
+                headers=headers
+            )
+
+        # Parse the JSON response
+        response_data = json.loads(response.data.decode())
+
+        # Assert the response status code
+        self.assertEqual(response_data.get('message'), 'Registration successful')
+    
+    def Check_Contact_Validation(self):
+        length = 8
+        characters = string.ascii_lowercase + string.digits
+        random_username = ''.join(random.choice(characters) for _ in range(length))
+        random_number = random.randint(0, 99999)
+        random_email = generate_random_email()
+
+        # Prepare the username and password for authorization
+        username = random_username
+        password = "Admin@123456"
+        auth_string = f"{username}:{password}"
+        auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+
+        # Prepare headers with the Base64 encoded Authorization
+        headers = {
+            'Authorization': f'Basic {auth_base64}',
+        }
+
+        # Simulate a POST request to the /Register endpoint
+        with open('resume.pdf', 'rb') as resume, open('pic.jpg', 'rb') as pic:
+            response = self.app.post(
+                '/Register',
+                data={
+                    'FirstName': 'Tester',
+                    'LastName': 'User',
+                    'EmailId': f'{random_email}',  
+                    'ContactDetails': f'{random_number}',
+                    'SkillSet': 'Python, Flask',
+                    'UserType': 'Employee',
+                    'Organization': 'TechCorp',
+                    'Resume': resume,
+                    'ProfilePicture': pic
+                },
+                content_type='multipart/form-data',
+                headers=headers
+            )
+
+        # Parse the JSON response
+        response_data = json.loads(response.data.decode())
+
+        # Assert the response status code
+        self.assertEqual(response_data.get('message'), 'Invalid contact number')
 
 if __name__ == '__main__':
     unittest.main()
